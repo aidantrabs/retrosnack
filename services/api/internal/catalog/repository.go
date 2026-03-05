@@ -1,0 +1,136 @@
+package catalog
+
+import (
+	"context"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+type Repository interface {
+	ListProducts(ctx context.Context) ([]Product, error)
+	GetProductByID(ctx context.Context, id uuid.UUID) (*Product, error)
+	CreateProduct(ctx context.Context, req CreateProductRequest) (*Product, error)
+	UpdateProduct(ctx context.Context, id uuid.UUID, req UpdateProductRequest) (*Product, error)
+	DeleteProduct(ctx context.Context, id uuid.UUID) error
+	ListCategories(ctx context.Context) ([]Category, error)
+}
+
+type repository struct {
+	db *pgxpool.Pool
+}
+
+func NewRepository(db *pgxpool.Pool) Repository {
+	return &repository{db: db}
+}
+
+func (r *repository) ListProducts(ctx context.Context) ([]Product, error) {
+	rows, err := r.db.Query(ctx,
+		`SELECT id, title, description, category_id, brand, condition,
+		        price_cents, seller_id, instagram_post_url, created_at, updated_at
+		 FROM products
+		 ORDER BY created_at DESC`,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var products []Product
+	for rows.Next() {
+		var p Product
+		if err := rows.Scan(
+			&p.ID, &p.Title, &p.Description, &p.CategoryID, &p.Brand, &p.Condition,
+			&p.PriceCents, &p.SellerID, &p.InstagramPostURL, &p.CreatedAt, &p.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		products = append(products, p)
+	}
+	return products, rows.Err()
+}
+
+func (r *repository) GetProductByID(ctx context.Context, id uuid.UUID) (*Product, error) {
+	var p Product
+	err := r.db.QueryRow(ctx,
+		`SELECT id, title, description, category_id, brand, condition,
+		        price_cents, seller_id, instagram_post_url, created_at, updated_at
+		 FROM products WHERE id = $1`,
+		id,
+	).Scan(
+		&p.ID, &p.Title, &p.Description, &p.CategoryID, &p.Brand, &p.Condition,
+		&p.PriceCents, &p.SellerID, &p.InstagramPostURL, &p.CreatedAt, &p.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &p, nil
+}
+
+func (r *repository) CreateProduct(ctx context.Context, req CreateProductRequest) (*Product, error) {
+	var p Product
+	err := r.db.QueryRow(ctx,
+		`INSERT INTO products (title, description, category_id, brand, condition, price_cents, instagram_post_url)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7)
+		 RETURNING id, title, description, category_id, brand, condition,
+		           price_cents, seller_id, instagram_post_url, created_at, updated_at`,
+		req.Title, req.Description, req.CategoryID, req.Brand, req.Condition,
+		req.PriceCents, req.InstagramPostURL,
+	).Scan(
+		&p.ID, &p.Title, &p.Description, &p.CategoryID, &p.Brand, &p.Condition,
+		&p.PriceCents, &p.SellerID, &p.InstagramPostURL, &p.CreatedAt, &p.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &p, nil
+}
+
+func (r *repository) UpdateProduct(ctx context.Context, id uuid.UUID, req UpdateProductRequest) (*Product, error) {
+	// Dynamic update — only set non-nil fields
+	var p Product
+	err := r.db.QueryRow(ctx,
+		`UPDATE products SET
+		   title             = COALESCE($2, title),
+		   description       = COALESCE($3, description),
+		   price_cents       = COALESCE($4, price_cents),
+		   instagram_post_url = COALESCE($5, instagram_post_url),
+		   updated_at        = NOW()
+		 WHERE id = $1
+		 RETURNING id, title, description, category_id, brand, condition,
+		           price_cents, seller_id, instagram_post_url, created_at, updated_at`,
+		id, req.Title, req.Description, req.PriceCents, req.InstagramPostURL,
+	).Scan(
+		&p.ID, &p.Title, &p.Description, &p.CategoryID, &p.Brand, &p.Condition,
+		&p.PriceCents, &p.SellerID, &p.InstagramPostURL, &p.CreatedAt, &p.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &p, nil
+}
+
+func (r *repository) DeleteProduct(ctx context.Context, id uuid.UUID) error {
+	_, err := r.db.Exec(ctx, `DELETE FROM products WHERE id = $1`, id)
+	return err
+}
+
+func (r *repository) ListCategories(ctx context.Context) ([]Category, error) {
+	rows, err := r.db.Query(ctx,
+		`SELECT id, name, slug, parent_id FROM categories ORDER BY name`,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var categories []Category
+	for rows.Next() {
+		var c Category
+		if err := rows.Scan(&c.ID, &c.Name, &c.Slug, &c.ParentID); err != nil {
+			return nil, err
+		}
+		categories = append(categories, c)
+	}
+	return categories, rows.Err()
+}
