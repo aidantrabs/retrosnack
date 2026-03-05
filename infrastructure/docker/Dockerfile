@@ -30,15 +30,14 @@ RUN go mod download
 CMD ["air", "-c", ".air.toml"]
 
 # ──────────────────────────────────────────────────────────────
-# Stage: production
+# Stage: production (Cloud Run — TLS terminated by GCP, no nginx needed)
 # ──────────────────────────────────────────────────────────────
 FROM alpine:3.21 AS production
 
-RUN apk --no-cache add ca-certificates nginx tzdata
+RUN apk --no-cache add ca-certificates tzdata
 
-COPY infrastructure/nginx/nginx.conf /etc/nginx/nginx.conf
 COPY --from=build /retrosnack-api /usr/local/bin/retrosnack-api
 
-EXPOSE 80
+EXPOSE 8080
 
-CMD ["sh", "-c", "nginx && retrosnack-api"]
+CMD ["retrosnack-api"]
