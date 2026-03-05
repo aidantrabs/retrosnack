@@ -9,7 +9,7 @@
 complexity (service discovery, distributed tracing, inter-service auth) without benefit at this scale.
 
 **Decision:** One Go binary with domain-separated packages (`internal/auth`, `internal/catalog`, etc.)
-that mirror microservice boundaries. Single Fly.io deployment.
+that mirror microservice boundaries. Single Cloud Run deployment.
 
 **Consequences:** Simple deployment and debugging. Can be extracted to true microservices later by
 promoting each `internal/` package to its own repo and adding gRPC/HTTP transport.
@@ -104,3 +104,24 @@ is the driver.
 
 **Consequences:** SQL is the source of truth. Schema changes require migration + sqlc regeneration.
 No runtime reflection overhead.
+
+---
+
+## ADR-008: Google Cloud Run over Fly.io for API Hosting
+
+**Status:** Accepted
+**Date:** 2026-03-05
+
+**Context:** Fly.io was the initial hosting choice but its free tier was removed — all apps now
+require a paid plan. A truly free alternative is needed for an early-stage project with low traffic.
+
+**Decision:** Google Cloud Run. Free tier: 2 million requests/month, 360,000 GB-seconds of compute,
+180,000 vCPU-seconds — enough for substantial early traffic at zero cost. Scales to zero when idle.
+Managed HTTPS, no nginx sidecar required. Secrets stored in Google Secret Manager and injected as
+env vars. GitHub Actions deploys via Workload Identity Federation (no long-lived service account keys).
+
+**Consequences:**
+- Dockerfile production stage is simpler (just the Go binary, no nginx).
+- Cold starts are fast for a statically compiled Go binary (~200 ms).
+- Neon PostgreSQL connection must tolerate brief reconnection on cold start — `pgxpool` handles this.
+- GCP project setup required: Artifact Registry repo, Secret Manager secrets, WIF configuration.
