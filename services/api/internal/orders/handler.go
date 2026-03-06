@@ -2,6 +2,7 @@ package orders
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -35,6 +36,11 @@ func (h *Handler) createOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if msg := validateCreateOrder(req); msg != "" {
+		httputil.ErrorMsg(w, http.StatusBadRequest, msg)
+		return
+	}
+
 	order, err := h.svc.CreateOrder(r.Context(), nil, req)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, err)
@@ -56,4 +62,25 @@ func (h *Handler) getOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httputil.JSON(w, http.StatusOK, order)
+}
+
+func validateCreateOrder(req CreateOrderRequest) string {
+	if len(req.Items) == 0 {
+		return "order must have at least one item"
+	}
+	if len(req.Items) > 50 {
+		return "order cannot have more than 50 items"
+	}
+	for i, item := range req.Items {
+		if item.VariantID == uuid.Nil {
+			return fmt.Sprintf("item %d: variant_id is required", i)
+		}
+		if item.Quantity <= 0 {
+			return fmt.Sprintf("item %d: quantity must be greater than zero", i)
+		}
+		if item.PriceCents <= 0 {
+			return fmt.Sprintf("item %d: price must be greater than zero", i)
+		}
+	}
+	return ""
 }
