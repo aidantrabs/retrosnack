@@ -92,6 +92,7 @@ func main() {
 	r.Use(chiMiddleware.Recoverer)
 	r.Use(chiMiddleware.RealIP)
 	r.Use(middleware.CORS(cfg.Env))
+	r.Use(middleware.MaxBodySize(1 << 20)) // 1 MB default
 
 	checker := k.Checker()
 	r.Get("/health", kenko.HandleHealth(checker))
