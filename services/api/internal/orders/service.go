@@ -2,6 +2,7 @@ package orders
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/google/uuid"
 	"github.com/MobinaToorani/retrosnack/internal/inventory"
@@ -25,11 +26,14 @@ func NewService(repo Repository, inv inventory.Service) Service {
 }
 
 func (s *service) CreateOrder(ctx context.Context, userID *uuid.UUID, req CreateOrderRequest) (*Order, error) {
-	// Reserve inventory for each item before creating the order
+	var reserved []OrderItemInput
+
 	for _, item := range req.Items {
 		if err := s.inventory.Reserve(ctx, item.VariantID, item.Quantity); err != nil {
+			s.releaseReserved(ctx, reserved)
 			return nil, err
 		}
+		reserved = append(reserved, item)
 	}
 
 	var total int64
@@ -37,7 +41,19 @@ func (s *service) CreateOrder(ctx context.Context, userID *uuid.UUID, req Create
 		total += item.PriceCents * int64(item.Quantity)
 	}
 
-	return s.repo.CreateOrder(ctx, userID, req.Items, total)
+	order, err := s.repo.CreateOrder(ctx, userID, req.Items, total)
+	if err != nil {
+		s.releaseReserved(ctx, reserved)
+		return nil, err
+	}
+
+	return order, nil
+}
+
+func (s *service) releaseReserved(ctx context.Context, items []OrderItemInput) {
+	for _, item := range items {
+		_ = s.inventory.Release(ctx, item.VariantID, item.Quantity)
+	}
 }
 
 func (s *service) GetOrder(ctx context.Context, id uuid.UUID) (*Order, error) {
@@ -54,14 +70,22 @@ func (s *service) MarkPaid(ctx context.Context, orderID uuid.UUID) error {
 		return err
 	}
 
-	// Deduct inventory — items are now committed
+	if err := s.repo.UpdateStatus(ctx, orderID, StatusPaid); err != nil {
+		return err
+	}
+
 	for _, item := range order.Items {
 		if err := s.inventory.Deduct(ctx, item.VariantID, item.Quantity); err != nil {
-			return err
+			slog.Error("failed to deduct inventory after payment",
+				"order_id", orderID,
+				"variant_id", item.VariantID,
+				"quantity", item.Quantity,
+				"error", err,
+			)
 		}
 	}
 
-	return s.repo.UpdateStatus(ctx, orderID, StatusPaid)
+	return nil
 }
 
 func (s *service) SetStripeSession(ctx context.Context, orderID uuid.UUID, sessionID string) error {
