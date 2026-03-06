@@ -3,6 +3,7 @@ package catalog
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -64,6 +65,11 @@ func (h *Handler) createProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if msg := validateCreateProduct(req); msg != "" {
+		httputil.ErrorMsg(w, http.StatusBadRequest, msg)
+		return
+	}
+
 	product, err := h.svc.CreateProduct(r.Context(), req)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, err)
@@ -82,6 +88,11 @@ func (h *Handler) updateProduct(w http.ResponseWriter, r *http.Request) {
 	var req UpdateProductRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		httputil.ErrorMsg(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if msg := validateUpdateProduct(req); msg != "" {
+		httputil.ErrorMsg(w, http.StatusBadRequest, msg)
 		return
 	}
 
@@ -114,4 +125,44 @@ func (h *Handler) listCategories(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httputil.JSON(w, http.StatusOK, categories)
+}
+
+var validConditions = map[string]bool{"excellent": true, "good": true, "fair": true}
+
+func validateCreateProduct(req CreateProductRequest) string {
+	if strings.TrimSpace(req.Title) == "" {
+		return "title is required"
+	}
+	if len(req.Title) > 200 {
+		return "title must be at most 200 characters"
+	}
+	if len(req.Description) > 5000 {
+		return "description must be at most 5000 characters"
+	}
+	if req.PriceCents <= 0 {
+		return "price must be greater than zero"
+	}
+	if !validConditions[req.Condition] {
+		return "condition must be excellent, good, or fair"
+	}
+	if req.CategoryID == uuid.Nil {
+		return "category_id is required"
+	}
+	return ""
+}
+
+func validateUpdateProduct(req UpdateProductRequest) string {
+	if req.Title != nil && strings.TrimSpace(*req.Title) == "" {
+		return "title cannot be empty"
+	}
+	if req.Title != nil && len(*req.Title) > 200 {
+		return "title must be at most 200 characters"
+	}
+	if req.Description != nil && len(*req.Description) > 5000 {
+		return "description must be at most 5000 characters"
+	}
+	if req.PriceCents != nil && *req.PriceCents <= 0 {
+		return "price must be greater than zero"
+	}
+	return ""
 }
