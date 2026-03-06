@@ -163,10 +163,12 @@ retrosnack/
 
 ### Local Development
 
+A `Makefile` is provided so you don't need to remember individual commands or pass secrets in the terminal. All env vars are loaded from `.env` automatically.
+
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/MobinaToorani/retrosnack.git
+   git clone https://github.com/retrosnack-clothing/retrosnack.git
    cd retrosnack
    ```
 
@@ -174,40 +176,38 @@ retrosnack/
 
    ```bash
    cp .env.example .env
-   # Fill in values — see Environment Variables below
    ```
 
-3. **Start the local stack**
+   The defaults in `.env.example` point at the local Docker Postgres — no changes needed to get started. Fill in Stripe and R2 keys if you need to test payments or image uploads.
+
+3. **Install dependencies and start the database**
 
    ```bash
-   docker-compose up
+   make install       # install Go and frontend deps
+   make db            # start local PostgreSQL via Docker
    ```
 
-   This starts:
-   - PostgreSQL on `localhost:5432`
-   - Go API on `localhost:8080`
-   - SvelteKit dev server on `localhost:5173`
-
-4. **Run database migrations**
+4. **Run migrations and generate types**
 
    ```bash
-   cd services/api
-   goose -dir db/migrations postgres "$DATABASE_URL" up
+   make migrate       # apply SQL migrations
+   make sqlc          # generate type-safe Go code
    ```
 
-5. **Generate sqlc types**
+5. **Start the services** (two terminals)
 
    ```bash
-   sqlc generate
+   make api           # terminal 1 — Go API on localhost:8080
+   make frontend      # terminal 2 — SvelteKit on localhost:5173
    ```
 
-6. **Frontend only**
+   Or start everything at once via Docker Compose:
 
    ```bash
-   cd apps/frontend
-   pnpm install
-   pnpm dev
+   make dev
    ```
+
+Run `make help` to see all available commands.
 
 ---
 
