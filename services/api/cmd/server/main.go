@@ -5,7 +5,9 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 
+	"github.com/aidantrabs/kenko"
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -70,6 +72,18 @@ func main() {
 	mediaSvc := media.NewService(cfg)
 	mediaHandler := media.NewHandler(mediaSvc)
 
+	// Health monitoring
+	k, err := kenko.New(
+		kenko.WithTarget("stripe", "https://api.stripe.com/v1/"),
+		kenko.WithInterval(30*time.Second),
+		kenko.WithLogger(logger),
+	)
+	if err != nil {
+		logger.Error("failed to initialize health monitor", "error", err)
+		os.Exit(1)
+	}
+	go k.Run(context.Background())
+
 	// Router
 	r := chi.NewRouter()
 	r.Use(chiMiddleware.Logger)
@@ -77,10 +91,10 @@ func main() {
 	r.Use(chiMiddleware.RealIP)
 	r.Use(middleware.CORS(cfg.Env))
 
-	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(`{"status":"ok"}`))
-	})
+	checker := k.Checker()
+	r.Get("/health", kenko.HandleHealth(checker))
+	r.Get("/ready", kenko.HandleReady(checker))
+	r.Get("/status", kenko.HandleStatus(checker))
 
 	r.Route("/api", func(r chi.Router) {
 		authHandler.Register(r)
