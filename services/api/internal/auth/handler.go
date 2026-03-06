@@ -6,9 +6,11 @@ import (
 	"net/http"
 	"net/mail"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/MobinaToorani/retrosnack/pkg/httputil"
+	"github.com/MobinaToorani/retrosnack/pkg/middleware"
 )
 
 type Handler struct {
@@ -20,8 +22,11 @@ func NewHandler(svc Service) *Handler {
 }
 
 func (h *Handler) Register(r chi.Router) {
-	r.Post("/auth/register", h.register)
-	r.Post("/auth/login", h.login)
+	r.Group(func(r chi.Router) {
+		r.Use(middleware.RateLimit(5, 1*time.Minute))
+		r.Post("/auth/register", h.register)
+		r.Post("/auth/login", h.login)
+	})
 }
 
 func (h *Handler) register(w http.ResponseWriter, r *http.Request) {

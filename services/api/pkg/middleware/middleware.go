@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -98,6 +100,65 @@ func MaxBodySize(n int64) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			r.Body = http.MaxBytesReader(w, r.Body, n)
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+type ipLimiter struct {
+	tokens   int
+	max      int
+	lastSeen time.Time
+}
+
+// RateLimit returns middleware that limits requests per ip
+// max is the burst size, window is the refill period
+func RateLimit(max int, window time.Duration) func(http.Handler) http.Handler {
+	var mu sync.Mutex
+	visitors := make(map[string]*ipLimiter)
+
+	// cleanup stale entries
+	go func() {
+		for {
+			time.Sleep(window * 2)
+			mu.Lock()
+			for ip, v := range visitors {
+				if time.Since(v.lastSeen) > window*2 {
+					delete(visitors, ip)
+				}
+			}
+			mu.Unlock()
+		}
+	}()
+
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ip := r.RemoteAddr
+
+			mu.Lock()
+			v, exists := visitors[ip]
+			if !exists {
+				visitors[ip] = &ipLimiter{tokens: max - 1, max: max, lastSeen: time.Now()}
+				mu.Unlock()
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			elapsed := time.Since(v.lastSeen)
+			refill := int(elapsed/window) * max
+			if refill > 0 {
+				v.tokens = min(v.max, v.tokens+refill)
+				v.lastSeen = time.Now()
+			}
+
+			if v.tokens <= 0 {
+				mu.Unlock()
+				http.Error(w, "rate limit exceeded", http.StatusTooManyRequests)
+				return
+			}
+
+			v.tokens--
+			mu.Unlock()
 			next.ServeHTTP(w, r)
 		})
 	}
