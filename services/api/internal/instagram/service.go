@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -25,7 +26,7 @@ type service struct {
 func NewService(repo Repository) Service {
 	return &service{
 		repo:   repo,
-		client: &http.Client{},
+		client: &http.Client{Timeout: 10 * time.Second},
 	}
 }
 
