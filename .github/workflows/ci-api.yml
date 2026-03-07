@@ -1,0 +1,59 @@
+name: CI — API
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "services/api/**"
+  pull_request:
+    branches: [main]
+    paths:
+      - "services/api/**"
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+          cache-dependency-path: services/api/go.sum
+
+      - uses: golangci/golangci-lint-action@v6
+        with:
+          working-directory: services/api
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/api
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+          cache-dependency-path: services/api/go.sum
+
+      - run: go test ./...
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/api
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+          cache-dependency-path: services/api/go.sum
+
+      - run: go build -o /dev/null ./cmd/server
