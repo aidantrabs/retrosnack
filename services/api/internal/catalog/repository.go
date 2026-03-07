@@ -14,6 +14,10 @@ type Repository interface {
 	UpdateProduct(ctx context.Context, id uuid.UUID, req UpdateProductRequest) (*Product, error)
 	DeleteProduct(ctx context.Context, id uuid.UUID) error
 	ListCategories(ctx context.Context) ([]Category, error)
+	ListVariants(ctx context.Context, productID uuid.UUID) ([]Variant, error)
+	CreateVariant(ctx context.Context, productID uuid.UUID, req CreateVariantRequest) (*Variant, error)
+	DeleteVariant(ctx context.Context, id uuid.UUID) error
+	SetStock(ctx context.Context, variantID uuid.UUID, quantity int) error
 }
 
 type repository struct {
@@ -133,4 +137,56 @@ func (r *repository) ListCategories(ctx context.Context) ([]Category, error) {
 		categories = append(categories, c)
 	}
 	return categories, rows.Err()
+}
+
+func (r *repository) ListVariants(ctx context.Context, productID uuid.UUID) ([]Variant, error) {
+	rows, err := r.db.Query(ctx,
+		`SELECT id, product_id, size, color, sku, created_at
+		 FROM variants WHERE product_id = $1 ORDER BY created_at`,
+		productID,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var variants []Variant
+	for rows.Next() {
+		var v Variant
+		if err := rows.Scan(&v.ID, &v.ProductID, &v.Size, &v.Color, &v.SKU, &v.CreatedAt); err != nil {
+			return nil, err
+		}
+		variants = append(variants, v)
+	}
+	return variants, rows.Err()
+}
+
+func (r *repository) CreateVariant(ctx context.Context, productID uuid.UUID, req CreateVariantRequest) (*Variant, error) {
+	var v Variant
+	err := r.db.QueryRow(ctx,
+		`INSERT INTO variants (product_id, size, color, sku)
+		 VALUES ($1, $2, $3, $4)
+		 RETURNING id, product_id, size, color, sku, created_at`,
+		productID, req.Size, req.Color, req.SKU,
+	).Scan(&v.ID, &v.ProductID, &v.Size, &v.Color, &v.SKU, &v.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+func (r *repository) DeleteVariant(ctx context.Context, id uuid.UUID) error {
+	_, err := r.db.Exec(ctx, `DELETE FROM variants WHERE id = $1`, id)
+	return err
+}
+
+func (r *repository) SetStock(ctx context.Context, variantID uuid.UUID, quantity int) error {
+	_, err := r.db.Exec(ctx,
+		`INSERT INTO inventory (variant_id, quantity)
+		 VALUES ($1, $2)
+		 ON CONFLICT (variant_id) DO UPDATE SET quantity = $2`,
+		variantID, quantity,
+	)
+	return err
 }

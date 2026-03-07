@@ -61,3 +61,13 @@ type UpdateProductRequest struct {
 	PriceCents       *int64  `json:"price_cents,omitempty"`
 	InstagramPostURL *string `json:"instagram_post_url,omitempty"`
 }
+
+type CreateVariantRequest struct {
+	Size  string `json:"size"`
+	Color string `json:"color"`
+	SKU   string `json:"sku"`
+}
+
+type SetStockRequest struct {
+	Quantity int `json:"quantity"`
+}
