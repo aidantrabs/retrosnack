@@ -74,7 +74,17 @@ func (h *Handler) createProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	product, err := h.svc.CreateProduct(r.Context(), req)
+	var sellerID *uuid.UUID
+	if claims, ok := middleware.ClaimsFromContext(r.Context()); ok {
+		m := *claims
+		if sub, _ := m["sub"].(string); sub != "" {
+			if id, err := uuid.Parse(sub); err == nil {
+				sellerID = &id
+			}
+		}
+	}
+
+	product, err := h.svc.CreateProduct(r.Context(), sellerID, req)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, err)
 		return

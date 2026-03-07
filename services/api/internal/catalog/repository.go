@@ -10,7 +10,7 @@ import (
 type Repository interface {
 	ListProducts(ctx context.Context) ([]Product, error)
 	GetProductByID(ctx context.Context, id uuid.UUID) (*Product, error)
-	CreateProduct(ctx context.Context, req CreateProductRequest) (*Product, error)
+	CreateProduct(ctx context.Context, sellerID *uuid.UUID, req CreateProductRequest) (*Product, error)
 	UpdateProduct(ctx context.Context, id uuid.UUID, req UpdateProductRequest) (*Product, error)
 	DeleteProduct(ctx context.Context, id uuid.UUID) error
 	ListCategories(ctx context.Context) ([]Category, error)
@@ -71,15 +71,15 @@ func (r *repository) GetProductByID(ctx context.Context, id uuid.UUID) (*Product
 	return &p, nil
 }
 
-func (r *repository) CreateProduct(ctx context.Context, req CreateProductRequest) (*Product, error) {
+func (r *repository) CreateProduct(ctx context.Context, sellerID *uuid.UUID, req CreateProductRequest) (*Product, error) {
 	var p Product
 	err := r.db.QueryRow(ctx,
-		`INSERT INTO products (title, description, category_id, brand, condition, price_cents, instagram_post_url)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7)
+		`INSERT INTO products (title, description, category_id, brand, condition, price_cents, instagram_post_url, seller_id)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		 RETURNING id, title, description, category_id, brand, condition,
 		           price_cents, seller_id, instagram_post_url, created_at, updated_at`,
 		req.Title, req.Description, req.CategoryID, req.Brand, req.Condition,
-		req.PriceCents, req.InstagramPostURL,
+		req.PriceCents, req.InstagramPostURL, sellerID,
 	).Scan(
 		&p.ID, &p.Title, &p.Description, &p.CategoryID, &p.Brand, &p.Condition,
 		&p.PriceCents, &p.SellerID, &p.InstagramPostURL, &p.CreatedAt, &p.UpdatedAt,
