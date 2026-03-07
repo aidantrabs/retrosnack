@@ -7,8 +7,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"github.com/MobinaToorani/retrosnack/pkg/httputil"
-	"github.com/MobinaToorani/retrosnack/pkg/middleware"
+	"github.com/retrosnack-clothing/retrosnack/pkg/httputil"
+	"github.com/retrosnack-clothing/retrosnack/pkg/middleware"
 )
 
 type Handler struct {

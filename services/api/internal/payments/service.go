@@ -10,7 +10,7 @@ import (
 	"github.com/stripe/stripe-go/v76"
 	"github.com/stripe/stripe-go/v76/checkout/session"
 	"github.com/stripe/stripe-go/v76/webhook"
-	"github.com/MobinaToorani/retrosnack/internal/orders"
+	"github.com/retrosnack-clothing/retrosnack/internal/orders"
 )
 
 type Service interface {

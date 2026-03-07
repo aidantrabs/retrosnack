@@ -13,7 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/google/uuid"
-	"github.com/MobinaToorani/retrosnack/pkg/config"
+	"github.com/retrosnack-clothing/retrosnack/pkg/config"
 )
 
 type Service interface {

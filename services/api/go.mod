@@ -1,4 +1,4 @@
-module github.com/MobinaToorani/retrosnack
+module github.com/retrosnack-clothing/retrosnack
 
 go 1.23.3
 

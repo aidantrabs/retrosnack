@@ -5,7 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/google/uuid"
-	"github.com/MobinaToorani/retrosnack/internal/inventory"
+	"github.com/retrosnack-clothing/retrosnack/internal/inventory"
 )
 
 type Service interface {

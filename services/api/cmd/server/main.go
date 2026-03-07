@@ -14,15 +14,15 @@ import (
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/MobinaToorani/retrosnack/internal/auth"
-	"github.com/MobinaToorani/retrosnack/internal/catalog"
-	"github.com/MobinaToorani/retrosnack/internal/instagram"
-	"github.com/MobinaToorani/retrosnack/internal/inventory"
-	"github.com/MobinaToorani/retrosnack/internal/media"
-	"github.com/MobinaToorani/retrosnack/internal/orders"
-	"github.com/MobinaToorani/retrosnack/internal/payments"
-	"github.com/MobinaToorani/retrosnack/pkg/config"
-	"github.com/MobinaToorani/retrosnack/pkg/middleware"
+	"github.com/retrosnack-clothing/retrosnack/internal/auth"
+	"github.com/retrosnack-clothing/retrosnack/internal/catalog"
+	"github.com/retrosnack-clothing/retrosnack/internal/instagram"
+	"github.com/retrosnack-clothing/retrosnack/internal/inventory"
+	"github.com/retrosnack-clothing/retrosnack/internal/media"
+	"github.com/retrosnack-clothing/retrosnack/internal/orders"
+	"github.com/retrosnack-clothing/retrosnack/internal/payments"
+	"github.com/retrosnack-clothing/retrosnack/pkg/config"
+	"github.com/retrosnack-clothing/retrosnack/pkg/middleware"
 )
 
 func main() {
