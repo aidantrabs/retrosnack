@@ -50,7 +50,18 @@ func (h *Handler) createOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	order, err := h.svc.CreateOrder(r.Context(), nil, req)
+	// extract user id from jwt if present (guest checkout passes nil)
+	var userID *uuid.UUID
+	if claims, ok := middleware.ClaimsFromContext(r.Context()); ok {
+		m := (*claims)
+		if sub, _ := m["sub"].(string); sub != "" {
+			if uid, err := uuid.Parse(sub); err == nil {
+				userID = &uid
+			}
+		}
+	}
+
+	order, err := h.svc.CreateOrder(r.Context(), userID, req)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, err)
 		return
@@ -70,6 +81,24 @@ func (h *Handler) getOrder(w http.ResponseWriter, r *http.Request) {
 		httputil.Error(w, http.StatusNotFound, err)
 		return
 	}
+
+	// ownership check: admins can see any order, users only their own
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		httputil.ErrorMsg(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	m := (*claims)
+	role, _ := m["role"].(string)
+	if role != "admin" {
+		sub, _ := m["sub"].(string)
+		callerID, _ := uuid.Parse(sub)
+		if order.UserID == nil || *order.UserID != callerID {
+			httputil.ErrorMsg(w, http.StatusForbidden, "forbidden")
+			return
+		}
+	}
+
 	httputil.JSON(w, http.StatusOK, order)
 }
 
