@@ -14,12 +14,12 @@ var ErrInvalidTransition = errors.New("invalid status transition")
 type Service interface {
 	CreateOrder(ctx context.Context, userID *uuid.UUID, req CreateOrderRequest) (*Order, error)
 	GetOrder(ctx context.Context, id uuid.UUID) (*Order, error)
-	GetOrderByStripeSession(ctx context.Context, sessionID string) (*Order, error)
+	GetOrderByCheckoutSession(ctx context.Context, sessionID string) (*Order, error)
 	MarkPaid(ctx context.Context, orderID uuid.UUID) error
 	MarkShipped(ctx context.Context, orderID uuid.UUID) error
 	MarkDelivered(ctx context.Context, orderID uuid.UUID) error
 	CancelOrder(ctx context.Context, orderID uuid.UUID) error
-	SetStripeSession(ctx context.Context, orderID uuid.UUID, sessionID string) error
+	SetCheckoutSession(ctx context.Context, orderID uuid.UUID, sessionID string) error
 }
 
 type service struct {
@@ -66,8 +66,8 @@ func (s *service) GetOrder(ctx context.Context, id uuid.UUID) (*Order, error) {
 	return s.repo.GetOrderByID(ctx, id)
 }
 
-func (s *service) GetOrderByStripeSession(ctx context.Context, sessionID string) (*Order, error) {
-	return s.repo.GetOrderByStripeSession(ctx, sessionID)
+func (s *service) GetOrderByCheckoutSession(ctx context.Context, sessionID string) (*Order, error) {
+	return s.repo.GetOrderByCheckoutSession(ctx, sessionID)
 }
 
 func (s *service) MarkPaid(ctx context.Context, orderID uuid.UUID) error {
@@ -136,6 +136,6 @@ func (s *service) CancelOrder(ctx context.Context, orderID uuid.UUID) error {
 	return nil
 }
 
-func (s *service) SetStripeSession(ctx context.Context, orderID uuid.UUID, sessionID string) error {
-	return s.repo.SetStripeSession(ctx, orderID, sessionID)
+func (s *service) SetCheckoutSession(ctx context.Context, orderID uuid.UUID, sessionID string) error {
+	return s.repo.SetCheckoutSession(ctx, orderID, sessionID)
 }

@@ -33,13 +33,13 @@ type Inventory struct {
 }
 
 type Order struct {
-	ID              uuid.UUID      `json:"id"`
-	UserID          uuid.NullUUID  `json:"user_id"`
-	Status          string         `json:"status"`
-	TotalCents      int32          `json:"total_cents"`
-	StripeSessionID sql.NullString `json:"stripe_session_id"`
-	CreatedAt       time.Time      `json:"created_at"`
-	UpdatedAt       time.Time      `json:"updated_at"`
+	ID                uuid.UUID      `json:"id"`
+	UserID            uuid.NullUUID  `json:"user_id"`
+	Status            string         `json:"status"`
+	TotalCents        int32          `json:"total_cents"`
+	CheckoutSessionID sql.NullString `json:"checkout_session_id"`
+	CreatedAt         time.Time      `json:"created_at"`
+	UpdatedAt         time.Time      `json:"updated_at"`
 }
 
 type OrderItem struct {

@@ -4,105 +4,157 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
+	"strconv"
 
 	"github.com/google/uuid"
-	"github.com/stripe/stripe-go/v76"
-	"github.com/stripe/stripe-go/v76/checkout/session"
-	"github.com/stripe/stripe-go/v76/webhook"
+	square "github.com/square/square-go-sdk"
+	squareclient "github.com/square/square-go-sdk/client"
+	"github.com/square/square-go-sdk/checkout"
+	"github.com/square/square-go-sdk/option"
 	"github.com/retrosnack-clothing/retrosnack/internal/orders"
 )
 
 type Service interface {
-	CreateCheckout(ctx context.Context, req CreateCheckoutRequest, successURL, cancelURL string) (*CheckoutSession, error)
-	HandleWebhook(ctx context.Context, payload []byte, signature string) error
+	CreateCheckout(ctx context.Context, req CreateCheckoutRequest, redirectURL string) (*CheckoutSession, error)
+	HandleWebhook(ctx context.Context, payload []byte, signatureHeader string) error
 }
 
 type service struct {
-	orders        orders.Service
-	webhookSecret string
+	orders          orders.Service
+	square          *squareclient.Client
+	locationID      string
+	webhookSigKey   string
+	webhookNotifURL string
 }
 
-func NewService(ordersSvc orders.Service, secretKey, webhookSecret string) Service {
-	stripe.Key = secretKey
+func NewService(ordersSvc orders.Service, accessToken, locationID, webhookSigKey, webhookNotifURL string) Service {
+	c := squareclient.NewClient(
+		option.WithToken(accessToken),
+	)
 	return &service{
-		orders:        ordersSvc,
-		webhookSecret: webhookSecret,
+		orders:          ordersSvc,
+		square:          c,
+		locationID:      locationID,
+		webhookSigKey:   webhookSigKey,
+		webhookNotifURL: webhookNotifURL,
 	}
 }
 
-func (s *service) CreateCheckout(ctx context.Context, req CreateCheckoutRequest, successURL, cancelURL string) (*CheckoutSession, error) {
+func (s *service) CreateCheckout(ctx context.Context, req CreateCheckoutRequest, redirectURL string) (*CheckoutSession, error) {
 	order, err := s.orders.GetOrder(ctx, req.OrderID)
 	if err != nil {
 		return nil, fmt.Errorf("order not found: %w", err)
 	}
 
-	lineItems := make([]*stripe.CheckoutSessionLineItemParams, 0, len(order.Items))
+	lineItems := make([]*square.OrderLineItem, 0, len(order.Items))
 	for _, item := range order.Items {
-		lineItems = append(lineItems, &stripe.CheckoutSessionLineItemParams{
-			PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
-				Currency: stripe.String("cad"),
-				ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
-					Name: stripe.String(item.VariantID.String()),
-				},
-				UnitAmount: stripe.Int64(item.PriceCents),
+		lineItems = append(lineItems, &square.OrderLineItem{
+			Name:     square.String(item.VariantID.String()),
+			Quantity: strconv.Itoa(item.Quantity),
+			BasePriceMoney: &square.Money{
+				Amount:   square.Int64(item.PriceCents),
+				Currency: square.CurrencyCad.Ptr(),
 			},
-			Quantity: stripe.Int64(int64(item.Quantity)),
+			Note: square.String("order:" + order.ID.String()),
 		})
 	}
 
-	params := &stripe.CheckoutSessionParams{
-		Mode:       stripe.String(string(stripe.CheckoutSessionModePayment)),
-		LineItems:  lineItems,
-		SuccessURL: stripe.String(successURL),
-		CancelURL:  stripe.String(cancelURL),
-		Metadata: map[string]string{
-			"order_id": order.ID.String(),
+	idempotencyKey := order.ID.String()
+
+	resp, err := s.square.Checkout.PaymentLinks.Create(ctx, &checkout.CreatePaymentLinkRequest{
+		IdempotencyKey: &idempotencyKey,
+		Order: &square.Order{
+			LocationID:  s.locationID,
+			ReferenceID: square.String(order.ID.String()),
+			LineItems:   lineItems,
 		},
-	}
-
-	sess, err := session.New(params)
+		CheckoutOptions: &square.CheckoutOptions{
+			RedirectURL: &redirectURL,
+		},
+	})
 	if err != nil {
+		return nil, fmt.Errorf("failed to create payment link: %w", err)
+	}
+
+	link := resp.PaymentLink
+	if link == nil || link.ID == nil {
+		return nil, fmt.Errorf("square returned empty payment link")
+	}
+
+	if err := s.orders.SetCheckoutSession(ctx, order.ID, *link.ID); err != nil {
 		return nil, err
 	}
 
-	if err := s.orders.SetStripeSession(ctx, order.ID, sess.ID); err != nil {
-		return nil, err
+	url := ""
+	if link.URL != nil {
+		url = *link.URL
 	}
 
 	return &CheckoutSession{
-		ID:        sess.ID,
-		OrderID:   order.ID,
-		URL:       sess.URL,
-		ExpiresAt: time.Unix(sess.ExpiresAt, 0),
+		ID:      *link.ID,
+		OrderID: order.ID,
+		URL:     url,
 	}, nil
 }
 
-func (s *service) HandleWebhook(ctx context.Context, payload []byte, signature string) error {
-	event, err := webhook.ConstructEvent(payload, signature, s.webhookSecret)
+func (s *service) HandleWebhook(ctx context.Context, payload []byte, signatureHeader string) error {
+	err := s.square.Webhooks.VerifySignature(ctx, &square.VerifySignatureRequest{
+		RequestBody:     string(payload),
+		SignatureHeader: signatureHeader,
+		SignatureKey:    s.webhookSigKey,
+		NotificationURL: s.webhookNotifURL,
+	})
 	if err != nil {
 		return fmt.Errorf("webhook signature verification failed: %w", err)
 	}
 
-	switch event.Type {
-	case "checkout.session.completed":
-		var sess stripe.CheckoutSession
-		if err := json.Unmarshal(event.Data.Raw, &sess); err != nil {
-			return fmt.Errorf("failed to parse checkout session: %w", err)
-		}
-
-		orderIDStr, ok := sess.Metadata["order_id"]
-		if !ok {
-			return fmt.Errorf("missing order_id in session metadata")
-		}
-
-		orderID, err := uuid.Parse(orderIDStr)
-		if err != nil {
-			return fmt.Errorf("invalid order_id in session metadata: %w", err)
-		}
-
-		return s.orders.MarkPaid(ctx, orderID)
+	var event struct {
+		Type string          `json:"type"`
+		Data json.RawMessage `json:"data"`
+	}
+	if err := json.Unmarshal(payload, &event); err != nil {
+		return fmt.Errorf("failed to parse webhook event: %w", err)
 	}
 
-	return nil
+	if event.Type != "payment.updated" {
+		return nil
+	}
+
+	var data struct {
+		Object struct {
+			Payment struct {
+				Status  string `json:"status"`
+				OrderID string `json:"order_id"`
+			} `json:"payment"`
+		} `json:"object"`
+	}
+	if err := json.Unmarshal(event.Data, &data); err != nil {
+		return fmt.Errorf("failed to parse payment data: %w", err)
+	}
+
+	if data.Object.Payment.Status != "COMPLETED" {
+		return nil
+	}
+
+	squareOrderID := data.Object.Payment.OrderID
+	if squareOrderID == "" {
+		return nil
+	}
+
+	// look up the square order to get our reference_id (our order UUID)
+	squareOrder, err := s.square.Orders.Get(ctx, &square.GetOrdersRequest{OrderID: squareOrderID})
+	if err != nil {
+		return fmt.Errorf("failed to get square order: %w", err)
+	}
+
+	if squareOrder.Order == nil || squareOrder.Order.ReferenceID == nil {
+		return fmt.Errorf("square order missing reference_id")
+	}
+
+	orderID, err := uuid.Parse(*squareOrder.Order.ReferenceID)
+	if err != nil {
+		return fmt.Errorf("invalid reference_id in square order: %w", err)
+	}
+
+	return s.orders.MarkPaid(ctx, orderID)
 }

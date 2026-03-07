@@ -75,7 +75,7 @@ func main() {
 	ordersSvc := orders.NewService(ordersRepo, inventorySvc)
 	ordersHandler := orders.NewHandler(ordersSvc, cfg.JWTSecret)
 
-	paymentsSvc := payments.NewService(ordersSvc, cfg.StripeSecretKey, cfg.StripeWebhookSecret)
+	paymentsSvc := payments.NewService(ordersSvc, cfg.SquareAccessToken, cfg.SquareLocationID, cfg.SquareWebhookSigKey, cfg.SquareWebhookNotifURL)
 	paymentsHandler := payments.NewHandler(paymentsSvc)
 
 	instagramRepo := instagram.NewRepository(pool)
@@ -87,7 +87,7 @@ func main() {
 
 	// Health monitoring
 	k, err := kenko.New(
-		kenko.WithTarget("stripe", "https://api.stripe.com/v1/"),
+		kenko.WithTarget("square", "https://connect.squareup.com/v2/locations"),
 		kenko.WithInterval(30*time.Second),
 		kenko.WithLogger(logger),
 	)

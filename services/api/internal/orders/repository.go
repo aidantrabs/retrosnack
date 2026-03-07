@@ -10,9 +10,9 @@ import (
 type Repository interface {
 	CreateOrder(ctx context.Context, userID *uuid.UUID, items []OrderItemInput, totalCents int64) (*Order, error)
 	GetOrderByID(ctx context.Context, id uuid.UUID) (*Order, error)
-	GetOrderByStripeSession(ctx context.Context, sessionID string) (*Order, error)
+	GetOrderByCheckoutSession(ctx context.Context, sessionID string) (*Order, error)
 	UpdateStatus(ctx context.Context, id uuid.UUID, status Status) error
-	SetStripeSession(ctx context.Context, id uuid.UUID, sessionID string) error
+	SetCheckoutSession(ctx context.Context, id uuid.UUID, sessionID string) error
 }
 
 type repository struct {
@@ -64,10 +64,10 @@ func (r *repository) CreateOrder(ctx context.Context, userID *uuid.UUID, items [
 func (r *repository) GetOrderByID(ctx context.Context, id uuid.UUID) (*Order, error) {
 	var o Order
 	err := r.db.QueryRow(ctx,
-		`SELECT id, user_id, status, total_cents, stripe_session_id, created_at, updated_at
+		`SELECT id, user_id, status, total_cents, checkout_session_id, created_at, updated_at
 		 FROM orders WHERE id = $1`,
 		id,
-	).Scan(&o.ID, &o.UserID, &o.Status, &o.TotalCents, &o.StripeSessionID, &o.CreatedAt, &o.UpdatedAt)
+	).Scan(&o.ID, &o.UserID, &o.Status, &o.TotalCents, &o.CheckoutSessionID, &o.CreatedAt, &o.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -96,13 +96,13 @@ func (r *repository) GetOrderByID(ctx context.Context, id uuid.UUID) (*Order, er
 	return &o, nil
 }
 
-func (r *repository) GetOrderByStripeSession(ctx context.Context, sessionID string) (*Order, error) {
+func (r *repository) GetOrderByCheckoutSession(ctx context.Context, sessionID string) (*Order, error) {
 	var o Order
 	err := r.db.QueryRow(ctx,
-		`SELECT id, user_id, status, total_cents, stripe_session_id, created_at, updated_at
-		 FROM orders WHERE stripe_session_id = $1`,
+		`SELECT id, user_id, status, total_cents, checkout_session_id, created_at, updated_at
+		 FROM orders WHERE checkout_session_id = $1`,
 		sessionID,
-	).Scan(&o.ID, &o.UserID, &o.Status, &o.TotalCents, &o.StripeSessionID, &o.CreatedAt, &o.UpdatedAt)
+	).Scan(&o.ID, &o.UserID, &o.Status, &o.TotalCents, &o.CheckoutSessionID, &o.CreatedAt, &o.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -117,9 +117,9 @@ func (r *repository) UpdateStatus(ctx context.Context, id uuid.UUID, status Stat
 	return err
 }
 
-func (r *repository) SetStripeSession(ctx context.Context, id uuid.UUID, sessionID string) error {
+func (r *repository) SetCheckoutSession(ctx context.Context, id uuid.UUID, sessionID string) error {
 	_, err := r.db.Exec(ctx,
-		`UPDATE orders SET stripe_session_id = $2, updated_at = NOW() WHERE id = $1`,
+		`UPDATE orders SET checkout_session_id = $2, updated_at = NOW() WHERE id = $1`,
 		id, sessionID,
 	)
 	return err
