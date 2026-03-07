@@ -48,6 +48,19 @@ func (h *Handler) uploadImage(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
+	// validate file type by reading first 512 bytes for content sniffing
+	buf := make([]byte, 512)
+	n, _ := file.Read(buf)
+	contentType := http.DetectContentType(buf[:n])
+	if contentType != "image/jpeg" && contentType != "image/png" && contentType != "image/webp" && contentType != "image/gif" {
+		httputil.ErrorMsg(w, http.StatusBadRequest, "file must be jpeg, png, webp, or gif")
+		return
+	}
+	if _, err := file.Seek(0, 0); err != nil {
+		httputil.Error(w, http.StatusInternalServerError, err)
+		return
+	}
+
 	upload, err := h.svc.Upload(r.Context(), productID, header.Filename, file, header.Size)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, err)
