@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -27,17 +28,21 @@ import (
 
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	if err := run(logger); err != nil {
+		logger.Error("fatal", "error", err)
+		os.Exit(1)
+	}
+}
 
+func run(logger *slog.Logger) error {
 	cfg, err := config.Load()
 	if err != nil {
-		logger.Error("failed to load config", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("load config: %w", err)
 	}
 
 	poolCfg, err := pgxpool.ParseConfig(cfg.DatabaseURL)
 	if err != nil {
-		logger.Error("failed to parse database url", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("parse database url: %w", err)
 	}
 	poolCfg.MaxConns = 10
 	poolCfg.MinConns = 2
@@ -47,18 +52,16 @@ func main() {
 
 	pool, err := pgxpool.NewWithConfig(context.Background(), poolCfg)
 	if err != nil {
-		logger.Error("failed to connect to database", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("connect to database: %w", err)
 	}
 	defer pool.Close()
 
 	if err := pool.Ping(context.Background()); err != nil {
-		logger.Error("database ping failed", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("database ping: %w", err)
 	}
 	logger.Info("database connected")
 
-	// Wire domain modules
+	// wire domain modules
 	authRepo := auth.NewRepository(pool)
 	authSvc := auth.NewService(authRepo, cfg.JWTSecret)
 	authHandler := auth.NewHandler(authSvc)
@@ -85,19 +88,18 @@ func main() {
 	mediaSvc := media.NewService(cfg)
 	mediaHandler := media.NewHandler(mediaSvc, cfg.JWTSecret)
 
-	// Health monitoring
+	// health monitoring
 	k, err := kenko.New(
 		kenko.WithTarget("square", "https://connect.squareup.com/v2/locations"),
 		kenko.WithInterval(30*time.Second),
 		kenko.WithLogger(logger),
 	)
 	if err != nil {
-		logger.Error("failed to initialize health monitor", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("init health monitor: %w", err)
 	}
 	go k.Run(context.Background())
 
-	// Router
+	// router
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(chiMiddleware.Logger)
@@ -138,7 +140,6 @@ func main() {
 		logger.Info("server starting", "addr", addr, "env", cfg.Env)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.Error("server stopped", "error", err)
-			os.Exit(1)
 		}
 	}()
 
@@ -149,9 +150,9 @@ func main() {
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
-		logger.Error("forced shutdown", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("forced shutdown: %w", err)
 	}
 
 	logger.Info("server stopped gracefully")
+	return nil
 }

@@ -46,7 +46,7 @@ func (h *Handler) uploadImage(w http.ResponseWriter, r *http.Request) {
 		httputil.ErrorMsg(w, http.StatusBadRequest, "missing image file")
 		return
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	// validate file type by reading first 512 bytes for content sniffing
 	buf := make([]byte, 512)

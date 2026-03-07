@@ -28,7 +28,7 @@ func (r *repository) CreateOrder(ctx context.Context, userID *uuid.UUID, items [
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	var o Order
 	o.Items = make([]OrderItem, 0, len(items))
