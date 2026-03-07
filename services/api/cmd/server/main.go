@@ -99,6 +99,7 @@ func main() {
 
 	// Router
 	r := chi.NewRouter()
+	r.Use(middleware.RequestID)
 	r.Use(chiMiddleware.Logger)
 	r.Use(chiMiddleware.Recoverer)
 	r.Use(chiMiddleware.RealIP)

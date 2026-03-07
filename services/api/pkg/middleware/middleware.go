@@ -9,11 +9,31 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 type contextKey string
 
-const claimsKey contextKey = "claims"
+const (
+	claimsKey    contextKey = "claims"
+	requestIDKey contextKey = "request_id"
+)
+
+// RequestID generates a unique request id and adds it to the context and response headers.
+func RequestID(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id := uuid.New().String()
+		ctx := context.WithValue(r.Context(), requestIDKey, id)
+		w.Header().Set("X-Request-ID", id)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+// RequestIDFromContext retrieves the request id from context.
+func RequestIDFromContext(ctx context.Context) string {
+	id, _ := ctx.Value(requestIDKey).(string)
+	return id
+}
 
 // CORS adds permissive CORS headers in development, strict headers in production.
 func CORS(env string) func(http.Handler) http.Handler {
