@@ -4,7 +4,6 @@ services:
     runtime: docker
     dockerfilePath: infrastructure/docker/Dockerfile
     dockerContext: .
-    dockerTarget: production
     plan: free
     region: oregon
     envVars:
