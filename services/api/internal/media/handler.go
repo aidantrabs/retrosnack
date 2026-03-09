@@ -1,6 +1,7 @@
 package media
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -25,6 +26,7 @@ func (h *Handler) Register(r chi.Router) {
 		r.Use(middleware.Auth(h.jwtSecret))
 		r.Use(middleware.RequireRole("admin", "seller"))
 		r.Post("/products/{productId}/images", h.uploadImage)
+		r.Delete("/images/{imageId}", h.deleteImage)
 	})
 }
 
@@ -61,10 +63,28 @@ func (h *Handler) uploadImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	upload, err := h.svc.Upload(r.Context(), productID, header.Filename, file, header.Size)
+	img, err := h.svc.Upload(r.Context(), productID, header.Filename, file, header.Size)
 	if err != nil {
+		if errors.Is(err, ErrTooManyImages) {
+			httputil.ErrorMsg(w, http.StatusBadRequest, "maximum 5 images per product")
+			return
+		}
 		httputil.Error(w, http.StatusInternalServerError, err)
 		return
 	}
-	httputil.JSON(w, http.StatusCreated, upload)
+	httputil.JSON(w, http.StatusCreated, img)
+}
+
+func (h *Handler) deleteImage(w http.ResponseWriter, r *http.Request) {
+	imageID, err := uuid.Parse(chi.URLParam(r, "imageId"))
+	if err != nil {
+		httputil.ErrorMsg(w, http.StatusBadRequest, "invalid image id")
+		return
+	}
+
+	if err := h.svc.Delete(r.Context(), imageID); err != nil {
+		httputil.Error(w, http.StatusInternalServerError, err)
+		return
+	}
+	httputil.NoContent(w)
 }
