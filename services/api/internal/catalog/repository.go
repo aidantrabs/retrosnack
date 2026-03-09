@@ -43,6 +43,7 @@ func (r *repository) ListProducts(ctx context.Context, limit, offset int) ([]Pro
 	defer rows.Close()
 
 	products := make([]Product, 0)
+	productIDs := make([]uuid.UUID, 0)
 	for rows.Next() {
 		var p Product
 		if err := rows.Scan(
@@ -53,8 +54,26 @@ func (r *repository) ListProducts(ctx context.Context, limit, offset int) ([]Pro
 		}
 		p.Images = make([]ProductImage, 0)
 		products = append(products, p)
+		productIDs = append(productIDs, p.ID)
 	}
-	return products, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	if len(productIDs) == 0 {
+		return products, nil
+	}
+
+	imageMap, err := r.loadProductImagesBatch(ctx, productIDs)
+	if err != nil {
+		return nil, err
+	}
+	for i := range products {
+		if imgs, ok := imageMap[products[i].ID]; ok {
+			products[i].Images = imgs
+		}
+	}
+	return products, nil
 }
 
 func (r *repository) GetProductByID(ctx context.Context, id uuid.UUID) (*Product, error) {
@@ -199,6 +218,28 @@ func (r *repository) SetStock(ctx context.Context, variantID uuid.UUID, quantity
 		variantID, quantity,
 	)
 	return err
+}
+
+func (r *repository) loadProductImagesBatch(ctx context.Context, productIDs []uuid.UUID) (map[uuid.UUID][]ProductImage, error) {
+	rows, err := r.db.Query(ctx,
+		`SELECT id, product_id, url, position
+		 FROM product_images WHERE product_id = ANY($1) ORDER BY position`,
+		productIDs,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	imageMap := make(map[uuid.UUID][]ProductImage)
+	for rows.Next() {
+		var img ProductImage
+		if err := rows.Scan(&img.ID, &img.ProductID, &img.URL, &img.Position); err != nil {
+			return nil, err
+		}
+		imageMap[img.ProductID] = append(imageMap[img.ProductID], img)
+	}
+	return imageMap, rows.Err()
 }
 
 func (r *repository) loadProductImages(ctx context.Context, productID uuid.UUID) ([]ProductImage, error) {
