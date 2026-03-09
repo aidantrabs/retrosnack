@@ -15,6 +15,8 @@ type Service interface {
 	CreateOrder(ctx context.Context, userID *uuid.UUID, req CreateOrderRequest) (*Order, error)
 	GetOrder(ctx context.Context, id uuid.UUID) (*Order, error)
 	GetOrderByCheckoutSession(ctx context.Context, sessionID string) (*Order, error)
+	ListByUser(ctx context.Context, userID uuid.UUID, limit, offset int) ([]Order, error)
+	ListAll(ctx context.Context, limit, offset int) ([]Order, error)
 	MarkPaid(ctx context.Context, orderID uuid.UUID) error
 	MarkShipped(ctx context.Context, orderID uuid.UUID) error
 	MarkDelivered(ctx context.Context, orderID uuid.UUID) error
@@ -64,6 +66,14 @@ func (s *service) releaseReserved(ctx context.Context, items []OrderItemInput) {
 
 func (s *service) GetOrder(ctx context.Context, id uuid.UUID) (*Order, error) {
 	return s.repo.GetOrderByID(ctx, id)
+}
+
+func (s *service) ListByUser(ctx context.Context, userID uuid.UUID, limit, offset int) ([]Order, error) {
+	return s.repo.ListByUser(ctx, userID, limit, offset)
+}
+
+func (s *service) ListAll(ctx context.Context, limit, offset int) ([]Order, error) {
+	return s.repo.ListAll(ctx, limit, offset)
 }
 
 func (s *service) GetOrderByCheckoutSession(ctx context.Context, sessionID string) (*Order, error) {
