@@ -97,7 +97,7 @@ func (s *service) Delete(ctx context.Context, imageID uuid.UUID) error {
 		return err
 	}
 	// best-effort delete from r2
-	_ = s.deleteFromR2(ctx, img.URL)
+	_ = s.deleteFromR2(ctx, img.R2Key)
 	return nil
 }
 
