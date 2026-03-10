@@ -9,6 +9,6 @@
       @retrosnack.shop
     </a>
 
-    <p>&copy; {new Date().getFullYear()} retrosnack clothing</p>
+    <p>&copy; {new Date().getFullYear()} retrosnack clothing · proudly canadian 🍁</p>
   </div>
 </footer>
