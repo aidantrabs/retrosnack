@@ -1,5 +1,6 @@
 <script lang="ts">
   import { cart } from '$lib/stores/cart.svelte';
+  import { api } from '$lib/api';
 
   let name = $state('');
   let email = $state('');
@@ -7,10 +8,34 @@
   let city = $state('');
   let province = $state('');
   let postal = $state('');
+  let submitting = $state(false);
+  let error = $state('');
 
-  function handleSubmit(e: SubmitEvent) {
+  async function handleSubmit(e: SubmitEvent) {
     e.preventDefault();
-    // placeholder — will connect to square checkout via backend
+    if (submitting || cart.items.length === 0) return;
+
+    submitting = true;
+    error = '';
+
+    try {
+      // create order from cart items
+      const order = await api.orders.create(
+        cart.items.map((item) => ({
+          variant_id: item.variantId,
+          quantity: 1,
+          price_cents: item.priceCents,
+        }))
+      );
+
+      // create square checkout session and redirect
+      const session = await api.checkout.create(order.id);
+      cart.clear();
+      window.location.href = session.url;
+    } catch {
+      error = 'something went wrong — please try again.';
+      submitting = false;
+    }
   }
 </script>
 
@@ -102,11 +127,16 @@
           </div>
         </div>
 
+        {#if error}
+          <p class="text-accent text-sm">{error}</p>
+        {/if}
+
         <button
           type="submit"
-          class="w-full bg-ink text-sand px-6 py-3 rounded-full text-sm font-medium hover:bg-ink/85 transition-colors mt-4"
+          disabled={submitting}
+          class="w-full bg-ink text-sand px-6 py-3 rounded-full text-sm font-medium transition-colors mt-4 {submitting ? 'opacity-60 cursor-not-allowed' : 'hover:bg-ink/85'}"
         >
-          proceed to payment
+          {submitting ? 'processing...' : 'proceed to payment'}
         </button>
       </form>
 
