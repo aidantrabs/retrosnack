@@ -11,6 +11,7 @@ type Config struct {
 	SquareAccessToken      string
 	SquareApplicationID    string
 	SquareLocationID       string
+	SquareEnvironment      string // "sandbox" or "production"
 	SquareWebhookSigKey    string
 	SquareWebhookNotifURL  string
 	R2AccountID            string
@@ -39,6 +40,7 @@ func Load() (*Config, error) {
 		SquareAccessToken:     os.Getenv("SQUARE_ACCESS_TOKEN"),
 		SquareApplicationID:   os.Getenv("SQUARE_APPLICATION_ID"),
 		SquareLocationID:      os.Getenv("SQUARE_LOCATION_ID"),
+		SquareEnvironment:     getEnvOr("SQUARE_ENVIRONMENT", "sandbox"),
 		SquareWebhookSigKey:   os.Getenv("SQUARE_WEBHOOK_SIG_KEY"),
 		SquareWebhookNotifURL: os.Getenv("SQUARE_WEBHOOK_NOTIF_URL"),
 		R2AccountID:           os.Getenv("R2_ACCOUNT_ID"),
