@@ -78,8 +78,8 @@ func run(logger *slog.Logger) error {
 	ordersSvc := orders.NewService(ordersRepo, inventorySvc)
 	ordersHandler := orders.NewHandler(ordersSvc, cfg.JWTSecret)
 
-	paymentsSvc := payments.NewService(ordersSvc, cfg.SquareAccessToken, cfg.SquareLocationID, cfg.SquareWebhookSigKey, cfg.SquareWebhookNotifURL)
-	paymentsHandler := payments.NewHandler(paymentsSvc, cfg.SquareApplicationID, cfg.SquareLocationID)
+	paymentsSvc := payments.NewService(ordersSvc, cfg.SquareAccessToken, cfg.SquareLocationID, cfg.SquareWebhookSigKey, cfg.SquareWebhookNotifURL, cfg.SquareEnvironment)
+	paymentsHandler := payments.NewHandler(paymentsSvc, cfg.SquareApplicationID, cfg.SquareLocationID, cfg.SquareEnvironment)
 
 	instagramRepo := instagram.NewRepository(pool)
 	instagramSvc := instagram.NewService(instagramRepo)
