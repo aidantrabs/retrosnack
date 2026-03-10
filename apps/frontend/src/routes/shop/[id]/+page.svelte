@@ -1,19 +1,53 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { mockProducts } from '$lib/mock-data';
+  import { api } from '$lib/api';
+  import type { Product, Variant } from '$lib/api';
   import { cart } from '$lib/stores/cart.svelte';
 
-  const product = $derived(mockProducts.find((p) => p.id === page.params.id));
-  const inCart = $derived(cart.items.some((i) => i.id === page.params.id));
+  let product = $state<Product | null>(null);
+  let variants = $state<Variant[]>([]);
+  let selectedVariant = $state<Variant | null>(null);
+  let loading = $state(true);
+  let notFound = $state(false);
+
+  const inCart = $derived(
+    selectedVariant ? cart.items.some((i) => i.variantId === selectedVariant!.id) : cart.has(page.params.id)
+  );
+
+  const image = $derived(product?.images[0]?.url ?? '');
+
+  $effect(() => {
+    loadProduct(page.params.id);
+  });
+
+  async function loadProduct(id: string) {
+    loading = true;
+    notFound = false;
+    try {
+      const [p, v] = await Promise.all([
+        api.products.get(id),
+        api.products.variants(id),
+      ]);
+      product = p;
+      variants = v;
+      if (v.length === 1) selectedVariant = v[0];
+    } catch {
+      notFound = true;
+    } finally {
+      loading = false;
+    }
+  }
 
   function addToCart() {
-    if (!product || inCart) return;
+    if (!product || !selectedVariant || inCart) return;
     cart.add({
-      id: product.id,
+      productId: product.id,
+      variantId: selectedVariant.id,
       title: product.title,
-      price: product.price,
-      size: product.size,
-      image: product.image,
+      priceCents: product.price_cents,
+      size: selectedVariant.size,
+      color: selectedVariant.color,
+      image,
     });
   }
 </script>
@@ -22,15 +56,29 @@
   <title>{product ? product.title : 'not found'} — retrosnack clothing</title>
 </svelte:head>
 
-{#if product}
+{#if loading}
+  <div class="mx-auto max-w-4xl px-4 py-24 text-center">
+    <p class="text-ink-muted">loading...</p>
+  </div>
+{:else if notFound || !product}
+  <div class="mx-auto max-w-4xl px-4 py-24 text-center">
+    <h1 class="text-2xl font-semibold mb-2">item not found</h1>
+    <p class="text-ink-muted mb-6">this piece may have already found a new home.</p>
+    <a href="/shop" class="text-accent hover:text-accent-hover transition-colors">
+      back to the rack &rarr;
+    </a>
+  </div>
+{:else}
   <article class="mx-auto max-w-4xl px-4 py-12">
     <div class="grid md:grid-cols-2 gap-8 md:gap-12">
       <div class="aspect-[3/4] overflow-hidden rounded-lg bg-sand-dark">
-        <img
-          src={product.image}
-          alt={product.title}
-          class="h-full w-full object-cover"
-        />
+        {#if image}
+          <img
+            src={image}
+            alt={product.title}
+            class="h-full w-full object-cover"
+          />
+        {/if}
       </div>
 
       <div class="flex flex-col justify-center gap-6">
@@ -40,16 +88,36 @@
         </div>
 
         <div class="flex items-center gap-3 text-sm text-ink-muted">
-          <span class="bg-tag px-3 py-1 rounded-full">size {product.size}</span>
           <span class="bg-tag px-3 py-1 rounded-full">{product.condition}</span>
         </div>
 
+        {#if product.description}
+          <p class="text-sm text-ink-muted leading-relaxed">{product.description}</p>
+        {/if}
+
         <p class="text-3xl font-semibold">
-          ${(product.price / 100).toFixed(2)}
+          ${(product.price_cents / 100).toFixed(2)}
         </p>
 
+        {#if variants.length > 1}
+          <div class="flex flex-wrap gap-2">
+            {#each variants as variant (variant.id)}
+              <button
+                onclick={() => (selectedVariant = variant)}
+                class="px-4 py-2 rounded-full text-sm border transition-colors {selectedVariant?.id === variant.id
+                  ? 'border-ink bg-ink text-sand'
+                  : 'border-border hover:border-ink'}"
+              >
+                {variant.size}{variant.color ? ` / ${variant.color}` : ''}
+              </button>
+            {/each}
+          </div>
+        {:else if variants.length === 1}
+          <span class="text-sm text-ink-muted">size {variants[0].size}{variants[0].color ? ` · ${variants[0].color}` : ''}</span>
+        {/if}
+
         <div class="flex flex-col gap-3">
-          {#if product.sold}
+          {#if variants.length === 0}
             <button
               disabled
               class="bg-ink/40 text-sand px-6 py-3 rounded-full text-sm font-medium cursor-not-allowed"
@@ -63,6 +131,13 @@
             >
               in your bag — view bag
             </a>
+          {:else if !selectedVariant}
+            <button
+              disabled
+              class="bg-ink/40 text-sand px-6 py-3 rounded-full text-sm font-medium cursor-not-allowed"
+            >
+              select a size
+            </button>
           {:else}
             <button
               onclick={addToCart}
@@ -84,12 +159,4 @@
       </div>
     </div>
   </article>
-{:else}
-  <div class="mx-auto max-w-4xl px-4 py-24 text-center">
-    <h1 class="text-2xl font-semibold mb-2">item not found</h1>
-    <p class="text-ink-muted mb-6">this piece may have already found a new home.</p>
-    <a href="/shop" class="text-accent hover:text-accent-hover transition-colors">
-      back to the rack &rarr;
-    </a>
-  </div>
 {/if}
