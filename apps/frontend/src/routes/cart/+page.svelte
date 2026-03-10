@@ -21,9 +21,9 @@
     </div>
   {:else}
     <div class="space-y-6">
-      {#each cart.items as item (item.id)}
+      {#each cart.items as item (item.variantId)}
         <div class="flex gap-4 pb-6 border-b border-border">
-          <a href="/shop/{item.id}" class="shrink-0">
+          <a href="/shop/{item.productId}" class="shrink-0">
             <img
               src={item.image}
               alt={item.title}
@@ -33,17 +33,17 @@
 
           <div class="flex-1 flex flex-col justify-between">
             <div>
-              <a href="/shop/{item.id}" class="font-medium hover:text-accent transition-colors">
+              <a href="/shop/{item.productId}" class="font-medium hover:text-accent transition-colors">
                 {item.title}
               </a>
-              <p class="text-sm text-ink-muted mt-0.5">size {item.size}</p>
+              <p class="text-sm text-ink-muted mt-0.5">{item.size}{item.color ? ` · ${item.color}` : ''}</p>
             </div>
 
-            <p class="font-semibold">${(item.price / 100).toFixed(2)}</p>
+            <p class="font-semibold">${(item.priceCents / 100).toFixed(2)}</p>
           </div>
 
           <button
-            onclick={() => cart.remove(item.id)}
+            onclick={() => cart.remove(item.variantId)}
             class="self-start text-ink-muted hover:text-accent transition-colors"
             aria-label="remove item"
           >

@@ -1,10 +1,11 @@
 export interface CartItem {
-  id: string;
+  productId: string;
+  variantId: string;
   title: string;
-  price: number;
+  priceCents: number;
   size: string;
+  color: string;
   image: string;
-  quantity: number;
 }
 
 const STORAGE_KEY = 'retrosnack-cart';
@@ -36,18 +37,21 @@ export const cart = {
   },
 
   get totalCents() {
-    return items.reduce((sum, item) => sum + item.price, 0);
+    return items.reduce((sum, item) => sum + item.priceCents, 0);
   },
 
-  add(product: Omit<CartItem, 'quantity'>) {
-    const existing = items.find((i) => i.id === product.id);
-    if (existing) return;
-    items.push({ ...product, quantity: 1 });
+  has(productId: string) {
+    return items.some((i) => i.productId === productId);
+  },
+
+  add(item: CartItem) {
+    if (items.some((i) => i.variantId === item.variantId)) return;
+    items.push(item);
     saveToStorage(items);
   },
 
-  remove(id: string) {
-    items = items.filter((i) => i.id !== id);
+  remove(variantId: string) {
+    items = items.filter((i) => i.variantId !== variantId);
     saveToStorage(items);
   },
 

@@ -115,7 +115,7 @@
           <h2 class="text-lg font-medium mb-4">order summary</h2>
 
           <div class="space-y-4 mb-6">
-            {#each cart.items as item (item.id)}
+            {#each cart.items as item (item.variantId)}
               <div class="flex gap-3">
                 <img
                   src={item.image}
@@ -124,9 +124,9 @@
                 />
                 <div class="flex-1 min-w-0">
                   <p class="text-sm font-medium truncate">{item.title}</p>
-                  <p class="text-xs text-ink-muted">size {item.size}</p>
+                  <p class="text-xs text-ink-muted">{item.size}{item.color ? ` · ${item.color}` : ''}</p>
                 </div>
-                <p class="text-sm font-semibold shrink-0">${(item.price / 100).toFixed(2)}</p>
+                <p class="text-sm font-semibold shrink-0">${(item.priceCents / 100).toFixed(2)}</p>
               </div>
             {/each}
           </div>
