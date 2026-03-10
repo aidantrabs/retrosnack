@@ -2,6 +2,7 @@
   import HeroSection from '$lib/components/HeroSection.svelte';
   import ProductCard from '$lib/components/ProductCard.svelte';
   import ProductGrid from '$lib/components/ProductGrid.svelte';
+  import InstagramCTA from '$lib/components/InstagramCTA.svelte';
   import { mockProducts } from '$lib/mock-data';
 
   const featured = mockProducts.slice(0, 4);
@@ -27,3 +28,5 @@
     {/each}
   </ProductGrid>
 </section>
+
+<InstagramCTA />
