@@ -14,3 +14,13 @@
   --font-display: "Fraunces", serif;
   --font-body: system-ui, -apple-system, sans-serif;
 }
+
+@layer base {
+  body {
+    @apply bg-sand text-ink font-body antialiased;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-display;
+  }
+}

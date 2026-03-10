@@ -4,8 +4,8 @@
   "description": "Curated secondhand women's clothing, accessories, and shoes.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#1a1a1a",
+  "background_color": "#E6D9CD",
+  "theme_color": "#E6D9CD",
   "orientation": "portrait-primary",
   "categories": ["shopping", "lifestyle"],
   "icons": [
