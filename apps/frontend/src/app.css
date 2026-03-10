@@ -11,17 +11,11 @@
   --color-border: #D1C4B5;
   --color-tag: #F0E6DB;
 
-  --font-logo: "Boogaloo", cursive;
   --font-display: "Fredoka", sans-serif;
-  --font-body: system-ui, -apple-system, sans-serif;
 }
 
 @layer base {
   body {
-    @apply bg-sand text-ink font-body antialiased;
-  }
-
-  h1, h2, h3, h4 {
-    @apply font-display;
+    @apply bg-sand text-ink font-display antialiased;
   }
 }
