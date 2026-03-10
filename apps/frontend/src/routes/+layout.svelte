@@ -2,6 +2,7 @@
 	import '../app.css';
 	import Navbar from '$lib/components/Navbar.svelte';
 	import Footer from '$lib/components/Footer.svelte';
+	import BackgroundFlower from '$lib/components/BackgroundFlower.svelte';
 	import { onMount } from 'svelte';
 
 	let { children } = $props();
@@ -14,7 +15,8 @@
 	});
 </script>
 
-<div class="flex flex-col min-h-screen">
+<BackgroundFlower />
+<div class="relative z-10 flex flex-col min-h-screen">
 	<Navbar />
 	<main class="flex-1">
 		{@render children()}
