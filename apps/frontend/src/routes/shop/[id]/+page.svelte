@@ -1,8 +1,23 @@
 <script lang="ts">
   import { page } from '$app/state';
   import { mockProducts } from '$lib/mock-data';
+  import { cart } from '$lib/stores/cart.svelte';
 
   const product = $derived(mockProducts.find((p) => p.id === page.params.id));
+  let added = $state(false);
+
+  function addToCart() {
+    if (!product) return;
+    cart.add({
+      id: product.id,
+      title: product.title,
+      price: product.price,
+      size: product.size,
+      image: product.image,
+    });
+    added = true;
+    setTimeout(() => (added = false), 1500);
+  }
 </script>
 
 <svelte:head>
@@ -32,9 +47,10 @@
 
         <div class="flex flex-col gap-3">
           <button
+            onclick={addToCart}
             class="bg-ink text-sand px-6 py-3 rounded-full text-sm font-medium hover:bg-ink/85 transition-colors"
           >
-            add to bag
+            {added ? 'added ✓' : 'add to bag'}
           </button>
 
           <a
