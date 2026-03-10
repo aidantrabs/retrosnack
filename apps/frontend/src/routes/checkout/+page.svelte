@@ -1,6 +1,5 @@
 <script lang="ts">
   import { cart } from '$lib/stores/cart.svelte';
-  import { goto } from '$app/navigation';
 
   let name = $state('');
   let email = $state('');
