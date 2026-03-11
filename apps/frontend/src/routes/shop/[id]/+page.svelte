@@ -2,13 +2,18 @@
   import { page } from '$app/state';
   import { api } from '$lib/api';
   import type { Product, Variant } from '$lib/api';
+  import ProductCard from '$lib/components/ProductCard.svelte';
+  import ProductGrid from '$lib/components/ProductGrid.svelte';
   import { cart } from '$lib/stores/cart.svelte';
+  import { toast } from '$lib/stores/toast.svelte';
 
   let product = $state<Product | null>(null);
   let variants = $state<Variant[]>([]);
   let selectedVariant = $state<Variant | null>(null);
   let loading = $state(true);
   let notFound = $state(false);
+  let justAdded = $state(false);
+  let moreItems = $state<Product[]>([]);
 
   const inCart = $derived(
     selectedVariant ? cart.items.some((i) => i.variantId === selectedVariant!.id) : cart.has(page.params.id)
@@ -23,13 +28,16 @@
   async function loadProduct(id: string) {
     loading = true;
     notFound = false;
+    justAdded = false;
     try {
-      const [p, v] = await Promise.all([
+      const [p, v, all] = await Promise.all([
         api.products.get(id),
         api.products.variants(id),
+        api.products.list(4, 0),
       ]);
       product = p;
       variants = v;
+      moreItems = all.filter((item) => item.id !== id).slice(0, 3);
       if (v.length === 1) selectedVariant = v[0];
     } catch {
       notFound = true;
@@ -49,6 +57,8 @@
       color: selectedVariant.color,
       image,
     });
+    justAdded = true;
+    toast.show('added to your bag');
   }
 </script>
 
@@ -124,13 +134,39 @@
             >
               sold
             </button>
+          {:else if justAdded}
+            <div class="bg-sand-light border border-border rounded-lg p-4 text-center space-y-3">
+              <p class="text-sm font-medium">added to your bag</p>
+              <div class="flex gap-3">
+                <a
+                  href="/shop"
+                  class="flex-1 border border-border px-4 py-2.5 rounded-full text-sm font-medium text-center hover:bg-sand-dark transition-colors"
+                >
+                  keep shopping
+                </a>
+                <a
+                  href="/cart"
+                  class="flex-1 bg-ink text-sand px-4 py-2.5 rounded-full text-sm font-medium text-center hover:bg-ink/85 transition-colors"
+                >
+                  view bag ({cart.count})
+                </a>
+              </div>
+            </div>
           {:else if inCart}
-            <a
-              href="/cart"
-              class="bg-ink text-sand px-6 py-3 rounded-full text-sm font-medium text-center hover:bg-ink/85 transition-colors"
-            >
-              in your bag — view bag
-            </a>
+            <div class="flex gap-3">
+              <a
+                href="/shop"
+                class="flex-1 border border-border px-4 py-2.5 rounded-full text-sm font-medium text-center hover:bg-sand-dark transition-colors"
+              >
+                keep shopping
+              </a>
+              <a
+                href="/cart"
+                class="flex-1 bg-ink text-sand px-4 py-2.5 rounded-full text-sm font-medium text-center hover:bg-ink/85 transition-colors"
+              >
+                view bag ({cart.count})
+              </a>
+            </div>
           {:else if !selectedVariant}
             <button
               disabled
@@ -159,4 +195,15 @@
       </div>
     </div>
   </article>
+
+  {#if moreItems.length > 0}
+    <section class="mx-auto max-w-4xl px-4 pb-16">
+      <h2 class="text-lg font-semibold mb-4">you might also like</h2>
+      <ProductGrid>
+        {#each moreItems as item (item.id)}
+          <ProductCard product={item} />
+        {/each}
+      </ProductGrid>
+    </section>
+  {/if}
 {/if}
