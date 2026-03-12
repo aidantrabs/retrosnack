@@ -1,10 +1,19 @@
-name: Deploy — Frontend
+name: Deploy - Frontend
 
 on:
   push:
     branches: [main]
     paths:
       - "apps/frontend/**"
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/frontend/**"
+
+permissions:
+  contents: read
+  deployments: write
+  pull-requests: write
 
 jobs:
   deploy:
@@ -41,3 +50,4 @@ jobs:
           projectName: retrosnack
           directory: apps/frontend/.svelte-kit/cloudflare
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.head_ref || 'main' }}
