@@ -7,19 +7,19 @@ graph TD
     User["browser / mobile"]
 
     subgraph "Cloudflare"
-        Pages["Cloudflare Pages\nSvelteKit PWA"]
-        R2["Cloudflare R2\nimages"]
-        CDN["Cloudflare CDN\nDNS + SSL"]
+        Pages["Cloudflare Pages - SvelteKit PWA"]
+        R2["Cloudflare R2 - images"]
+        CDN["Cloudflare CDN - DNS + SSL"]
     end
 
     subgraph "Render"
-        API["Go API\nretrosnack-api"]
+        API["Go API"]
     end
 
     subgraph "external"
         Neon["Neon PostgreSQL"]
-        Square["Square\npayments"]
-        IG["Instagram\noEmbed API"]
+        Square["Square payments"]
+        IG["Instagram oEmbed API"]
     end
 
     User --> CDN --> Pages
@@ -224,7 +224,7 @@ erDiagram
     }
     inventory {
         uuid id PK
-        uuid variant_id FK UK
+        uuid variant_id UK
         int quantity
         int reserved
     }
@@ -250,7 +250,7 @@ erDiagram
     }
     instagram_links {
         uuid id PK
-        uuid product_id FK UK
+        uuid product_id UK
         string post_url
         text embed_html
     }
