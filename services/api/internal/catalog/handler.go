@@ -188,6 +188,18 @@ func (h *Handler) createVariant(w http.ResponseWriter, r *http.Request) {
 		httputil.ErrorMsg(w, http.StatusBadRequest, "sku is required")
 		return
 	}
+	if len(req.SKU) > 100 {
+		httputil.ErrorMsg(w, http.StatusBadRequest, "sku must be at most 100 characters")
+		return
+	}
+	if len(req.Size) > 50 {
+		httputil.ErrorMsg(w, http.StatusBadRequest, "size must be at most 50 characters")
+		return
+	}
+	if len(req.Color) > 50 {
+		httputil.ErrorMsg(w, http.StatusBadRequest, "color must be at most 50 characters")
+		return
+	}
 
 	variant, err := h.svc.CreateVariant(r.Context(), productID, req)
 	if err != nil {
@@ -253,6 +265,9 @@ func validateCreateProduct(req CreateProductRequest) string {
 	}
 	if !validConditions[req.Condition] {
 		return "condition must be excellent, good, or fair"
+	}
+	if len(req.Brand) > 100 {
+		return "brand must be at most 100 characters"
 	}
 	if req.CategoryID == uuid.Nil {
 		return "category_id is required"
