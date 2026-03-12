@@ -34,9 +34,12 @@ CMD ["air", "-c", ".air.toml"]
 # ──────────────────────────────────────────────────────────────
 FROM alpine:3.21 AS production
 
-RUN apk --no-cache add ca-certificates tzdata
+RUN apk --no-cache add ca-certificates tzdata && \
+    addgroup -S app && adduser -S app -G app
 
 COPY --from=build /retrosnack-api /usr/local/bin/retrosnack-api
+
+USER app
 
 EXPOSE 8080
 
