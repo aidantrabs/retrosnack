@@ -103,7 +103,7 @@ func run(logger *slog.Logger) error {
 	// router
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
-	r.Use(chiMiddleware.Logger)
+	r.Use(middleware.Logger(logger))
 	r.Use(chiMiddleware.Recoverer)
 	r.Use(chiMiddleware.RealIP)
 	r.Use(middleware.CORS(cfg.Env))
