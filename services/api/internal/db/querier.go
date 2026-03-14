@@ -11,10 +11,17 @@ import (
 )
 
 type Querier interface {
+	CreateDrop(ctx context.Context, arg CreateDropParams) (Drop, error)
 	CreateProduct(ctx context.Context, arg CreateProductParams) (Product, error)
+	DeleteDrop(ctx context.Context, id uuid.UUID) error
 	DeleteProduct(ctx context.Context, id uuid.UUID) error
-	GetProduct(ctx context.Context, id uuid.UUID) (Product, error)
-	ListProducts(ctx context.Context) ([]Product, error)
+	GetDropByID(ctx context.Context, id uuid.UUID) (Drop, error)
+	GetDropBySlug(ctx context.Context, slug string) (Drop, error)
+	GetProduct(ctx context.Context, id uuid.UUID) (GetProductRow, error)
+	ListDrops(ctx context.Context) ([]Drop, error)
+	ListProducts(ctx context.Context) ([]ListProductsRow, error)
+	ListProductsByDrop(ctx context.Context, dropID uuid.NullUUID) ([]ListProductsByDropRow, error)
+	UpdateDrop(ctx context.Context, arg UpdateDropParams) (Drop, error)
 }
 
 var _ Querier = (*Queries)(nil)

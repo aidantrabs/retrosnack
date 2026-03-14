@@ -7,14 +7,15 @@ package db
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 )
 
 const createProduct = `-- name: CreateProduct :one
-INSERT INTO products (title, description, category_id, brand, condition, price_cents, instagram_post_url)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
-RETURNING id, title, description, category_id, brand, condition, price_cents, seller_id, instagram_post_url, created_at, updated_at
+INSERT INTO products (title, description, category_id, brand, condition, price_cents, instagram_post_url, seller_id, drop_id, notes)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+RETURNING id, title, description, category_id, brand, condition, price_cents, seller_id, instagram_post_url, created_at, updated_at, drop_id, notes
 `
 
 type CreateProductParams struct {
@@ -25,6 +26,9 @@ type CreateProductParams struct {
 	Condition        string        `json:"condition"`
 	PriceCents       int32         `json:"price_cents"`
 	InstagramPostUrl string        `json:"instagram_post_url"`
+	SellerID         uuid.NullUUID `json:"seller_id"`
+	DropID           uuid.NullUUID `json:"drop_id"`
+	Notes            string        `json:"notes"`
 }
 
 func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (Product, error) {
@@ -36,6 +40,9 @@ func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (P
 		arg.Condition,
 		arg.PriceCents,
 		arg.InstagramPostUrl,
+		arg.SellerID,
+		arg.DropID,
+		arg.Notes,
 	)
 	var i Product
 	err := row.Scan(
@@ -50,6 +57,8 @@ func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (P
 		&i.InstagramPostUrl,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.DropID,
+		&i.Notes,
 	)
 	return i, err
 }
@@ -65,14 +74,31 @@ func (q *Queries) DeleteProduct(ctx context.Context, id uuid.UUID) error {
 
 const getProduct = `-- name: GetProduct :one
 SELECT id, title, description, category_id, brand, condition,
-       price_cents, seller_id, instagram_post_url, created_at, updated_at
+       price_cents, seller_id, instagram_post_url, drop_id, notes,
+       created_at, updated_at
 FROM products
 WHERE id = $1
 `
 
-func (q *Queries) GetProduct(ctx context.Context, id uuid.UUID) (Product, error) {
+type GetProductRow struct {
+	ID               uuid.UUID     `json:"id"`
+	Title            string        `json:"title"`
+	Description      string        `json:"description"`
+	CategoryID       uuid.NullUUID `json:"category_id"`
+	Brand            string        `json:"brand"`
+	Condition        string        `json:"condition"`
+	PriceCents       int32         `json:"price_cents"`
+	SellerID         uuid.NullUUID `json:"seller_id"`
+	InstagramPostUrl string        `json:"instagram_post_url"`
+	DropID           uuid.NullUUID `json:"drop_id"`
+	Notes            string        `json:"notes"`
+	CreatedAt        time.Time     `json:"created_at"`
+	UpdatedAt        time.Time     `json:"updated_at"`
+}
+
+func (q *Queries) GetProduct(ctx context.Context, id uuid.UUID) (GetProductRow, error) {
 	row := q.db.QueryRowContext(ctx, getProduct, id)
-	var i Product
+	var i GetProductRow
 	err := row.Scan(
 		&i.ID,
 		&i.Title,
@@ -83,6 +109,8 @@ func (q *Queries) GetProduct(ctx context.Context, id uuid.UUID) (Product, error)
 		&i.PriceCents,
 		&i.SellerID,
 		&i.InstagramPostUrl,
+		&i.DropID,
+		&i.Notes,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -91,20 +119,37 @@ func (q *Queries) GetProduct(ctx context.Context, id uuid.UUID) (Product, error)
 
 const listProducts = `-- name: ListProducts :many
 SELECT id, title, description, category_id, brand, condition,
-       price_cents, seller_id, instagram_post_url, created_at, updated_at
+       price_cents, seller_id, instagram_post_url, drop_id, notes,
+       created_at, updated_at
 FROM products
 ORDER BY created_at DESC
 `
 
-func (q *Queries) ListProducts(ctx context.Context) ([]Product, error) {
+type ListProductsRow struct {
+	ID               uuid.UUID     `json:"id"`
+	Title            string        `json:"title"`
+	Description      string        `json:"description"`
+	CategoryID       uuid.NullUUID `json:"category_id"`
+	Brand            string        `json:"brand"`
+	Condition        string        `json:"condition"`
+	PriceCents       int32         `json:"price_cents"`
+	SellerID         uuid.NullUUID `json:"seller_id"`
+	InstagramPostUrl string        `json:"instagram_post_url"`
+	DropID           uuid.NullUUID `json:"drop_id"`
+	Notes            string        `json:"notes"`
+	CreatedAt        time.Time     `json:"created_at"`
+	UpdatedAt        time.Time     `json:"updated_at"`
+}
+
+func (q *Queries) ListProducts(ctx context.Context) ([]ListProductsRow, error) {
 	rows, err := q.db.QueryContext(ctx, listProducts)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Product
+	var items []ListProductsRow
 	for rows.Next() {
-		var i Product
+		var i ListProductsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Title,
@@ -115,6 +160,70 @@ func (q *Queries) ListProducts(ctx context.Context) ([]Product, error) {
 			&i.PriceCents,
 			&i.SellerID,
 			&i.InstagramPostUrl,
+			&i.DropID,
+			&i.Notes,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listProductsByDrop = `-- name: ListProductsByDrop :many
+SELECT id, title, description, category_id, brand, condition,
+       price_cents, seller_id, instagram_post_url, drop_id, notes,
+       created_at, updated_at
+FROM products
+WHERE drop_id = $1
+ORDER BY created_at DESC
+`
+
+type ListProductsByDropRow struct {
+	ID               uuid.UUID     `json:"id"`
+	Title            string        `json:"title"`
+	Description      string        `json:"description"`
+	CategoryID       uuid.NullUUID `json:"category_id"`
+	Brand            string        `json:"brand"`
+	Condition        string        `json:"condition"`
+	PriceCents       int32         `json:"price_cents"`
+	SellerID         uuid.NullUUID `json:"seller_id"`
+	InstagramPostUrl string        `json:"instagram_post_url"`
+	DropID           uuid.NullUUID `json:"drop_id"`
+	Notes            string        `json:"notes"`
+	CreatedAt        time.Time     `json:"created_at"`
+	UpdatedAt        time.Time     `json:"updated_at"`
+}
+
+func (q *Queries) ListProductsByDrop(ctx context.Context, dropID uuid.NullUUID) ([]ListProductsByDropRow, error) {
+	rows, err := q.db.QueryContext(ctx, listProductsByDrop, dropID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListProductsByDropRow
+	for rows.Next() {
+		var i ListProductsByDropRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
+			&i.Description,
+			&i.CategoryID,
+			&i.Brand,
+			&i.Condition,
+			&i.PriceCents,
+			&i.SellerID,
+			&i.InstagramPostUrl,
+			&i.DropID,
+			&i.Notes,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {

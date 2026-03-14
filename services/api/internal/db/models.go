@@ -18,6 +18,16 @@ type Category struct {
 	ParentID uuid.NullUUID `json:"parent_id"`
 }
 
+type Drop struct {
+	ID           uuid.UUID    `json:"id"`
+	Name         string       `json:"name"`
+	Slug         string       `json:"slug"`
+	Description  string       `json:"description"`
+	InstagramUrl string       `json:"instagram_url"`
+	ReleasedAt   sql.NullTime `json:"released_at"`
+	CreatedAt    time.Time    `json:"created_at"`
+}
+
 type InstagramLink struct {
 	ID        uuid.UUID    `json:"id"`
 	ProductID uuid.UUID    `json:"product_id"`
@@ -62,6 +72,8 @@ type Product struct {
 	InstagramPostUrl string        `json:"instagram_post_url"`
 	CreatedAt        time.Time     `json:"created_at"`
 	UpdatedAt        time.Time     `json:"updated_at"`
+	DropID           uuid.NullUUID `json:"drop_id"`
+	Notes            string        `json:"notes"`
 }
 
 type ProductImage struct {
