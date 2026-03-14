@@ -12,13 +12,26 @@ type Product struct {
 	Description      string         `json:"description"`
 	CategoryID       uuid.UUID      `json:"category_id"`
 	Brand            string         `json:"brand"`
-	Condition        string         `json:"condition"` // "excellent" | "good" | "fair"
+	Condition        string         `json:"condition"`
 	PriceCents       int64          `json:"price_cents"`
 	SellerID         *uuid.UUID     `json:"seller_id,omitempty"`
 	InstagramPostURL string         `json:"instagram_post_url"`
+	DropID           *uuid.UUID     `json:"drop_id,omitempty"`
+	Notes            string         `json:"notes"`
 	Images           []ProductImage `json:"images"`
+	Drop             *Drop          `json:"drop,omitempty"`
 	CreatedAt        time.Time      `json:"created_at"`
 	UpdatedAt        time.Time      `json:"updated_at"`
+}
+
+type Drop struct {
+	ID           uuid.UUID  `json:"id"`
+	Name         string     `json:"name"`
+	Slug         string     `json:"slug"`
+	Description  string     `json:"description"`
+	InstagramURL string     `json:"instagram_url"`
+	ReleasedAt   *time.Time `json:"released_at,omitempty"`
+	CreatedAt    time.Time  `json:"created_at"`
 }
 
 type ProductImage struct {
@@ -46,20 +59,37 @@ type Category struct {
 }
 
 type CreateProductRequest struct {
-	Title            string    `json:"title"`
-	Description      string    `json:"description"`
-	CategoryID       uuid.UUID `json:"category_id"`
-	Brand            string    `json:"brand"`
-	Condition        string    `json:"condition"`
-	PriceCents       int64     `json:"price_cents"`
-	InstagramPostURL string    `json:"instagram_post_url"`
+	Title            string     `json:"title"`
+	Description      string     `json:"description"`
+	CategoryID       uuid.UUID  `json:"category_id"`
+	Brand            string     `json:"brand"`
+	Condition        string     `json:"condition"`
+	PriceCents       int64      `json:"price_cents"`
+	InstagramPostURL string     `json:"instagram_post_url"`
+	DropID           *uuid.UUID `json:"drop_id,omitempty"`
+	Notes            string     `json:"notes"`
 }
 
 type UpdateProductRequest struct {
-	Title            *string `json:"title,omitempty"`
-	Description      *string `json:"description,omitempty"`
-	PriceCents       *int64  `json:"price_cents,omitempty"`
-	InstagramPostURL *string `json:"instagram_post_url,omitempty"`
+	Title            *string    `json:"title,omitempty"`
+	Description      *string    `json:"description,omitempty"`
+	PriceCents       *int64     `json:"price_cents,omitempty"`
+	InstagramPostURL *string    `json:"instagram_post_url,omitempty"`
+	DropID           *uuid.UUID `json:"drop_id,omitempty"`
+	Notes            *string    `json:"notes,omitempty"`
+}
+
+type CreateDropRequest struct {
+	Name         string `json:"name"`
+	Slug         string `json:"slug"`
+	Description  string `json:"description"`
+	InstagramURL string `json:"instagram_url"`
+}
+
+type UpdateDropRequest struct {
+	Name         *string `json:"name,omitempty"`
+	Description  *string `json:"description,omitempty"`
+	InstagramURL *string `json:"instagram_url,omitempty"`
 }
 
 type CreateVariantRequest struct {
