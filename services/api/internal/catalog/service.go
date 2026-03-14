@@ -20,6 +20,12 @@ type Service interface {
 	CreateVariant(ctx context.Context, productID uuid.UUID, req CreateVariantRequest) (*Variant, error)
 	DeleteVariant(ctx context.Context, id uuid.UUID) error
 	SetStock(ctx context.Context, variantID uuid.UUID, quantity int) error
+	ListDrops(ctx context.Context) ([]Drop, error)
+	GetDropBySlug(ctx context.Context, slug string) (*Drop, error)
+	GetDropProducts(ctx context.Context, dropID uuid.UUID) ([]Product, error)
+	CreateDrop(ctx context.Context, req CreateDropRequest) (*Drop, error)
+	UpdateDrop(ctx context.Context, id uuid.UUID, req UpdateDropRequest) (*Drop, error)
+	DeleteDrop(ctx context.Context, id uuid.UUID) error
 }
 
 type service struct {
@@ -68,4 +74,28 @@ func (s *service) DeleteVariant(ctx context.Context, id uuid.UUID) error {
 
 func (s *service) SetStock(ctx context.Context, variantID uuid.UUID, quantity int) error {
 	return s.repo.SetStock(ctx, variantID, quantity)
+}
+
+func (s *service) ListDrops(ctx context.Context) ([]Drop, error) {
+	return s.repo.ListDrops(ctx)
+}
+
+func (s *service) GetDropBySlug(ctx context.Context, slug string) (*Drop, error) {
+	return s.repo.GetDropBySlug(ctx, slug)
+}
+
+func (s *service) GetDropProducts(ctx context.Context, dropID uuid.UUID) ([]Product, error) {
+	return s.repo.GetDropProducts(ctx, dropID)
+}
+
+func (s *service) CreateDrop(ctx context.Context, req CreateDropRequest) (*Drop, error) {
+	return s.repo.CreateDrop(ctx, req)
+}
+
+func (s *service) UpdateDrop(ctx context.Context, id uuid.UUID, req UpdateDropRequest) (*Drop, error) {
+	return s.repo.UpdateDrop(ctx, id, req)
+}
+
+func (s *service) DeleteDrop(ctx context.Context, id uuid.UUID) error {
+	return s.repo.DeleteDrop(ctx, id)
 }
