@@ -48,6 +48,11 @@ export const api = {
                 body: JSON.stringify({ order_id: orderId, source_id: sourceId }),
             }),
     },
+    drops: {
+        list: () => request<Drop[]>('/api/drops'),
+        get: (slug: string) => request<Drop>(`/api/drops/${slug}`),
+        products: (slug: string) => request<Product[]>(`/api/drops/${slug}/products`),
+    },
 };
 
 // types — kept in sync with go models
@@ -57,14 +62,27 @@ export interface Product {
     title: string;
     description: string;
     brand: string;
-    condition: 'excellent' | 'good' | 'fair';
+    condition: 'new' | 'excellent' | 'good' | 'fair';
     price_cents: number;
     category_id: string;
     seller_id: string | null;
     instagram_post_url: string;
+    drop_id: string | null;
+    notes: string;
     images: ProductImage[];
+    drop?: Drop;
     created_at: string;
     updated_at: string;
+}
+
+export interface Drop {
+    id: string;
+    name: string;
+    slug: string;
+    description: string;
+    instagram_url: string;
+    released_at: string | null;
+    created_at: string;
 }
 
 export interface ProductImage {
