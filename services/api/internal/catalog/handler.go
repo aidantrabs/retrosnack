@@ -26,6 +26,9 @@ func (h *Handler) Register(r chi.Router) {
 	r.Get("/products/{id}", h.getProduct)
 	r.Get("/products/{id}/variants", h.listVariants)
 	r.Get("/categories", h.listCategories)
+	r.Get("/drops", h.listDrops)
+	r.Get("/drops/{slug}", h.getDrop)
+	r.Get("/drops/{slug}/products", h.getDropProducts)
 
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.Auth(h.jwtSecret))
@@ -36,6 +39,9 @@ func (h *Handler) Register(r chi.Router) {
 		r.Post("/products/{id}/variants", h.createVariant)
 		r.Delete("/variants/{id}", h.deleteVariant)
 		r.Put("/variants/{id}/stock", h.setStock)
+		r.Post("/drops", h.createDrop)
+		r.Patch("/drops/{slug}", h.updateDrop)
+		r.Delete("/drops/{slug}", h.deleteDrop)
 	})
 }
 
@@ -248,7 +254,106 @@ func (h *Handler) setStock(w http.ResponseWriter, r *http.Request) {
 	httputil.NoContent(w)
 }
 
-var validConditions = map[string]bool{"excellent": true, "good": true, "fair": true}
+func (h *Handler) listDrops(w http.ResponseWriter, r *http.Request) {
+	drops, err := h.svc.ListDrops(r.Context())
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, err)
+		return
+	}
+	httputil.JSON(w, http.StatusOK, drops)
+}
+
+func (h *Handler) getDrop(w http.ResponseWriter, r *http.Request) {
+	slug := chi.URLParam(r, "slug")
+	drop, err := h.svc.GetDropBySlug(r.Context(), slug)
+	if err != nil {
+		httputil.Error(w, http.StatusNotFound, err)
+		return
+	}
+	httputil.JSON(w, http.StatusOK, drop)
+}
+
+func (h *Handler) getDropProducts(w http.ResponseWriter, r *http.Request) {
+	slug := chi.URLParam(r, "slug")
+	drop, err := h.svc.GetDropBySlug(r.Context(), slug)
+	if err != nil {
+		httputil.Error(w, http.StatusNotFound, err)
+		return
+	}
+
+	products, err := h.svc.GetDropProducts(r.Context(), drop.ID)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, err)
+		return
+	}
+	httputil.JSON(w, http.StatusOK, products)
+}
+
+func (h *Handler) createDrop(w http.ResponseWriter, r *http.Request) {
+	var req CreateDropRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		httputil.ErrorMsg(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if strings.TrimSpace(req.Name) == "" {
+		httputil.ErrorMsg(w, http.StatusBadRequest, "name is required")
+		return
+	}
+	if strings.TrimSpace(req.Slug) == "" {
+		httputil.ErrorMsg(w, http.StatusBadRequest, "slug is required")
+		return
+	}
+	if len(req.Name) > 200 {
+		httputil.ErrorMsg(w, http.StatusBadRequest, "name must be at most 200 characters")
+		return
+	}
+
+	drop, err := h.svc.CreateDrop(r.Context(), req)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, err)
+		return
+	}
+	httputil.JSON(w, http.StatusCreated, drop)
+}
+
+func (h *Handler) updateDrop(w http.ResponseWriter, r *http.Request) {
+	slug := chi.URLParam(r, "slug")
+	drop, err := h.svc.GetDropBySlug(r.Context(), slug)
+	if err != nil {
+		httputil.Error(w, http.StatusNotFound, err)
+		return
+	}
+
+	var req UpdateDropRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		httputil.ErrorMsg(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	updated, err := h.svc.UpdateDrop(r.Context(), drop.ID, req)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, err)
+		return
+	}
+	httputil.JSON(w, http.StatusOK, updated)
+}
+
+func (h *Handler) deleteDrop(w http.ResponseWriter, r *http.Request) {
+	slug := chi.URLParam(r, "slug")
+	drop, err := h.svc.GetDropBySlug(r.Context(), slug)
+	if err != nil {
+		httputil.Error(w, http.StatusNotFound, err)
+		return
+	}
+
+	if err := h.svc.DeleteDrop(r.Context(), drop.ID); err != nil {
+		httputil.Error(w, http.StatusInternalServerError, err)
+		return
+	}
+	httputil.NoContent(w)
+}
+
+var validConditions = map[string]bool{"new": true, "excellent": true, "good": true, "fair": true}
 
 func validateCreateProduct(req CreateProductRequest) string {
 	if strings.TrimSpace(req.Title) == "" {
@@ -264,7 +369,7 @@ func validateCreateProduct(req CreateProductRequest) string {
 		return "price must be greater than zero"
 	}
 	if !validConditions[req.Condition] {
-		return "condition must be excellent, good, or fair"
+		return "condition must be new, excellent, good, or fair"
 	}
 	if len(req.Brand) > 100 {
 		return "brand must be at most 100 characters"
