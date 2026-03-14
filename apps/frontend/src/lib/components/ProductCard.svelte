@@ -32,6 +32,22 @@
                 </span>
             </div>
         {/if}
+        <div class="absolute top-2 left-2 flex flex-col gap-1.5">
+            {#if product.condition === 'new'}
+                <span class="bg-accent text-sand text-xs font-medium px-2.5 py-1 rounded-full">
+                    new
+                </span>
+            {/if}
+            {#if product.drop}
+                <a
+                    href="/drops/{product.drop.slug}"
+                    class="bg-ink/80 text-sand text-xs font-medium px-2.5 py-1 rounded-full hover:bg-ink transition-colors"
+                    onclick={(e) => e.stopPropagation()}
+                >
+                    {product.drop.name}
+                </a>
+            {/if}
+        </div>
     </div>
 
     <div class="mt-3 space-y-1">
