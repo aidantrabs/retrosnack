@@ -18,6 +18,12 @@ type Repository interface {
 	CreateVariant(ctx context.Context, productID uuid.UUID, req CreateVariantRequest) (*Variant, error)
 	DeleteVariant(ctx context.Context, id uuid.UUID) error
 	SetStock(ctx context.Context, variantID uuid.UUID, quantity int) error
+	ListDrops(ctx context.Context) ([]Drop, error)
+	GetDropBySlug(ctx context.Context, slug string) (*Drop, error)
+	GetDropProducts(ctx context.Context, dropID uuid.UUID) ([]Product, error)
+	CreateDrop(ctx context.Context, req CreateDropRequest) (*Drop, error)
+	UpdateDrop(ctx context.Context, id uuid.UUID, req UpdateDropRequest) (*Drop, error)
+	DeleteDrop(ctx context.Context, id uuid.UUID) error
 }
 
 type repository struct {
@@ -267,4 +273,123 @@ func (r *repository) loadProductImages(ctx context.Context, productID uuid.UUID)
 		images = append(images, img)
 	}
 	return images, rows.Err()
+}
+
+func (r *repository) ListDrops(ctx context.Context) ([]Drop, error) {
+	rows, err := r.db.Query(ctx,
+		`SELECT id, name, slug, description, instagram_url, released_at, created_at
+		 FROM drops ORDER BY released_at DESC NULLS LAST, created_at DESC`,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	drops := make([]Drop, 0)
+	for rows.Next() {
+		var d Drop
+		if err := rows.Scan(&d.ID, &d.Name, &d.Slug, &d.Description, &d.InstagramURL, &d.ReleasedAt, &d.CreatedAt); err != nil {
+			return nil, err
+		}
+		drops = append(drops, d)
+	}
+	return drops, rows.Err()
+}
+
+func (r *repository) GetDropBySlug(ctx context.Context, slug string) (*Drop, error) {
+	var d Drop
+	err := r.db.QueryRow(ctx,
+		`SELECT id, name, slug, description, instagram_url, released_at, created_at
+		 FROM drops WHERE slug = $1`,
+		slug,
+	).Scan(&d.ID, &d.Name, &d.Slug, &d.Description, &d.InstagramURL, &d.ReleasedAt, &d.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &d, nil
+}
+
+func (r *repository) GetDropProducts(ctx context.Context, dropID uuid.UUID) ([]Product, error) {
+	rows, err := r.db.Query(ctx,
+		`SELECT id, title, description, category_id, brand, condition,
+		        price_cents, seller_id, instagram_post_url, drop_id, notes,
+		        created_at, updated_at
+		 FROM products WHERE drop_id = $1
+		 ORDER BY created_at DESC`,
+		dropID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	products := make([]Product, 0)
+	productIDs := make([]uuid.UUID, 0)
+	for rows.Next() {
+		var p Product
+		if err := rows.Scan(
+			&p.ID, &p.Title, &p.Description, &p.CategoryID, &p.Brand, &p.Condition,
+			&p.PriceCents, &p.SellerID, &p.InstagramPostURL, &p.DropID, &p.Notes,
+			&p.CreatedAt, &p.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		p.Images = make([]ProductImage, 0)
+		products = append(products, p)
+		productIDs = append(productIDs, p.ID)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	if len(productIDs) == 0 {
+		return products, nil
+	}
+
+	imageMap, err := r.loadProductImagesBatch(ctx, productIDs)
+	if err != nil {
+		return nil, err
+	}
+	for i := range products {
+		if imgs, ok := imageMap[products[i].ID]; ok {
+			products[i].Images = imgs
+		}
+	}
+	return products, nil
+}
+
+func (r *repository) CreateDrop(ctx context.Context, req CreateDropRequest) (*Drop, error) {
+	var d Drop
+	err := r.db.QueryRow(ctx,
+		`INSERT INTO drops (name, slug, description, instagram_url)
+		 VALUES ($1, $2, $3, $4)
+		 RETURNING id, name, slug, description, instagram_url, released_at, created_at`,
+		req.Name, req.Slug, req.Description, req.InstagramURL,
+	).Scan(&d.ID, &d.Name, &d.Slug, &d.Description, &d.InstagramURL, &d.ReleasedAt, &d.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &d, nil
+}
+
+func (r *repository) UpdateDrop(ctx context.Context, id uuid.UUID, req UpdateDropRequest) (*Drop, error) {
+	var d Drop
+	err := r.db.QueryRow(ctx,
+		`UPDATE drops SET
+		   name          = COALESCE($2, name),
+		   description   = COALESCE($3, description),
+		   instagram_url = COALESCE($4, instagram_url)
+		 WHERE id = $1
+		 RETURNING id, name, slug, description, instagram_url, released_at, created_at`,
+		id, req.Name, req.Description, req.InstagramURL,
+	).Scan(&d.ID, &d.Name, &d.Slug, &d.Description, &d.InstagramURL, &d.ReleasedAt, &d.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &d, nil
+}
+
+func (r *repository) DeleteDrop(ctx context.Context, id uuid.UUID) error {
+	_, err := r.db.Exec(ctx, `DELETE FROM drops WHERE id = $1`, id)
+	return err
 }
