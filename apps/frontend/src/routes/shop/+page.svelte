@@ -1,5 +1,6 @@
 <script lang="ts">
     import ProductCard from '$lib/components/ProductCard.svelte';
+    import ProductCardSkeleton from '$lib/components/ProductCardSkeleton.svelte';
     import ProductGrid from '$lib/components/ProductGrid.svelte';
     import { api } from '$lib/api';
     import type { Product, Category } from '$lib/api';
@@ -78,7 +79,11 @@
     </div>
 
     {#if loading}
-        <p class="text-center text-ink-muted py-16">loading...</p>
+        <ProductGrid>
+            {#each Array(8) as _}
+                <ProductCardSkeleton />
+            {/each}
+        </ProductGrid>
     {:else if error}
         <p class="text-center text-ink-muted py-16">{error}</p>
     {:else if products.length === 0}

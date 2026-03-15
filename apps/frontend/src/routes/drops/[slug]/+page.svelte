@@ -3,7 +3,9 @@
     import { api } from '$lib/api';
     import type { Drop, Product } from '$lib/api';
     import ProductCard from '$lib/components/ProductCard.svelte';
+    import ProductCardSkeleton from '$lib/components/ProductCardSkeleton.svelte';
     import ProductGrid from '$lib/components/ProductGrid.svelte';
+    import Skeleton from '$lib/components/Skeleton.svelte';
 
     let drop = $state<Drop | null>(null);
     let products = $state<Product[]>([]);
@@ -41,9 +43,22 @@
 </svelte:head>
 
 {#if loading}
-    <div class="mx-auto max-w-6xl px-4 py-24 text-center">
-        <p class="text-ink-muted">loading...</p>
-    </div>
+    <section class="mx-auto max-w-6xl px-4 py-12">
+        <div class="mb-8">
+            <Skeleton class="h-3.5 w-20 mb-3" />
+            <Skeleton class="h-8 w-1/3 mb-3" />
+            <Skeleton class="h-4 w-2/3 mb-4" />
+            <div class="flex gap-3">
+                <Skeleton class="h-10 w-40 rounded-full" />
+                <Skeleton class="h-10 w-36 rounded-full" />
+            </div>
+        </div>
+        <ProductGrid>
+            {#each Array(4) as _}
+                <ProductCardSkeleton />
+            {/each}
+        </ProductGrid>
+    </section>
 {:else if notFound || !drop}
     <div class="mx-auto max-w-6xl px-4 py-24 text-center">
         <h1 class="text-2xl font-semibold mb-2">drop not found</h1>

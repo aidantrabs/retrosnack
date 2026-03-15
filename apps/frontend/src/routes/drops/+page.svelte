@@ -1,6 +1,7 @@
 <script lang="ts">
     import { api } from '$lib/api';
     import type { Drop } from '$lib/api';
+    import Skeleton from '$lib/components/Skeleton.svelte';
 
     let drops = $state<Drop[]>([]);
     let loading = $state(true);
@@ -26,7 +27,16 @@
     <h1 class="text-2xl md:text-3xl font-semibold mb-8">drops</h1>
 
     {#if loading}
-        <p class="text-center text-ink-muted py-16">loading...</p>
+        <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {#each Array(3) as _}
+                <div class="border border-border rounded-lg p-6 space-y-3">
+                    <Skeleton class="h-5 w-1/2" />
+                    <Skeleton class="h-3.5 w-full" />
+                    <Skeleton class="h-3.5 w-2/3" />
+                    <Skeleton class="h-3.5 w-1/4 mt-2" />
+                </div>
+            {/each}
+        </div>
     {:else if error}
         <p class="text-center text-ink-muted py-16">{error}</p>
     {:else if drops.length === 0}

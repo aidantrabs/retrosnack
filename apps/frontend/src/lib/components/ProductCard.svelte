@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { Product } from '$lib/api';
+    import Skeleton from './Skeleton.svelte';
 
     interface Props {
         product: Product;
@@ -9,20 +10,25 @@
     let { product, sold = false }: Props = $props();
 
     const image = product.images[0]?.url ?? '';
+    let imageLoaded = $state(!image);
 </script>
 
 <a href="/shop/{product.id}" class="group block {sold ? 'opacity-60' : ''}">
     <div class="relative aspect-[3/4] overflow-hidden rounded-lg bg-sand-dark">
         {#if image}
+            {#if !imageLoaded}
+                <Skeleton class="absolute inset-0" />
+            {/if}
             <img
                 src={image}
                 alt={product.title}
                 loading="lazy"
                 width="300"
                 height="400"
-                class="h-full w-full object-cover transition-transform duration-300 {sold
+                onload={() => (imageLoaded = true)}
+                class="h-full w-full object-cover transition-all duration-500 {sold
                     ? ''
-                    : 'group-hover:scale-105'}"
+                    : 'group-hover:scale-105'} {imageLoaded ? 'opacity-100' : 'opacity-0'}"
             />
         {/if}
         {#if sold}

@@ -4,6 +4,7 @@
     import type { Product, Variant } from '$lib/api';
     import ProductCard from '$lib/components/ProductCard.svelte';
     import ProductGrid from '$lib/components/ProductGrid.svelte';
+    import Skeleton from '$lib/components/Skeleton.svelte';
     import { cart } from '$lib/stores/cart.svelte';
     import { toast } from '$lib/stores/toast.svelte';
 
@@ -82,9 +83,20 @@
 </svelte:head>
 
 {#if loading}
-    <div class="mx-auto max-w-4xl px-4 py-24 text-center">
-        <p class="text-ink-muted">loading...</p>
-    </div>
+    <article class="mx-auto max-w-4xl px-4 py-12">
+        <div class="grid md:grid-cols-2 gap-8 md:gap-12">
+            <Skeleton class="aspect-[3/4] w-full" />
+            <div class="flex flex-col justify-center gap-6">
+                <div>
+                    <Skeleton class="h-3.5 w-1/4 mb-2" />
+                    <Skeleton class="h-8 w-3/4" />
+                </div>
+                <Skeleton class="h-10 w-1/3" />
+                <Skeleton class="h-12 w-full rounded-full" />
+                <Skeleton class="h-12 w-full rounded-full" />
+            </div>
+        </div>
+    </article>
 {:else if notFound || !product}
     <div class="mx-auto max-w-4xl px-4 py-24 text-center">
         <h1 class="text-2xl font-semibold mb-2">item not found</h1>
