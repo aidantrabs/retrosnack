@@ -1,5 +1,6 @@
 <script lang="ts">
     import { cart } from '$lib/stores/cart.svelte';
+    import FlowerDoodle from '$lib/components/FlowerDoodle.svelte';
 </script>
 
 <svelte:head>
@@ -11,10 +12,12 @@
 
     {#if cart.items.length === 0}
         <div class="text-center py-16">
-            <p class="text-ink-muted mb-6">your bag is empty.</p>
+            <FlowerDoodle size={48} class="text-ink/15 mx-auto mb-6" />
+            <p class="text-lg font-medium mb-2">your bag is empty</p>
+            <p class="text-ink-muted mb-8 text-sm">time to find your next favourite piece.</p>
             <a
                 href="/shop"
-                class="inline-block bg-ink text-sand px-6 py-3 rounded-full text-sm font-medium hover:bg-ink/85 transition-colors"
+                class="press inline-block bg-ink text-sand px-6 py-3 rounded-full text-sm font-medium hover:bg-ink/85 transition-colors"
             >
                 browse the rack
             </a>
@@ -80,7 +83,7 @@
 
             <a
                 href="/checkout"
-                class="block w-full bg-ink text-sand px-6 py-3 rounded-full text-sm font-medium text-center hover:bg-ink/85 transition-colors"
+                class="press block w-full bg-ink text-sand px-6 py-3 rounded-full text-sm font-medium text-center hover:bg-ink/85 transition-colors"
             >
                 proceed to checkout
             </a>

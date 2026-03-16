@@ -5,9 +5,11 @@
             href="https://instagram.com/retrosnack.shop"
             target="_blank"
             rel="noopener noreferrer"
-            class="text-2xl md:text-3xl font-semibold hover:text-accent transition-colors"
+            class="text-2xl md:text-3xl font-semibold hover:text-accent transition-colors inline-block"
         >
-            @retrosnack.shop
+            <span class="border-b-2 border-transparent hover:border-accent transition-colors pb-1">
+                @retrosnack.shop
+            </span>
         </a>
     </div>
 </section>

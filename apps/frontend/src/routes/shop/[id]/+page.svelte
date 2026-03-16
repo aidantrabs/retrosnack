@@ -5,6 +5,7 @@
     import ProductCard from '$lib/components/ProductCard.svelte';
     import ProductGrid from '$lib/components/ProductGrid.svelte';
     import Skeleton from '$lib/components/Skeleton.svelte';
+    import FadeIn from '$lib/components/FadeIn.svelte';
     import { cart } from '$lib/stores/cart.svelte';
     import { toast } from '$lib/stores/toast.svelte';
 
@@ -15,6 +16,7 @@
     let notFound = $state(false);
     let justAdded = $state(false);
     let moreItems = $state<Product[]>([]);
+    let imageLoaded = $state(false);
 
     const productId = $derived(page.params.id ?? '');
 
@@ -34,6 +36,7 @@
         loading = true;
         notFound = false;
         justAdded = false;
+        imageLoaded = false;
         try {
             const [p, v, all] = await Promise.all([
                 api.products.get(id),
@@ -108,14 +111,18 @@
 {:else}
     <article class="mx-auto max-w-4xl px-4 py-12">
         <div class="grid md:grid-cols-2 gap-8 md:gap-12">
-            <div class="aspect-[3/4] overflow-hidden rounded-lg bg-sand-dark">
+            <div class="relative aspect-[3/4] overflow-hidden rounded-lg bg-sand-dark">
                 {#if image}
+                    {#if !imageLoaded}
+                        <Skeleton class="absolute inset-0" />
+                    {/if}
                     <img
                         src={image}
                         alt={product.title}
                         width="600"
                         height="800"
-                        class="h-full w-full object-cover"
+                        onload={() => (imageLoaded = true)}
+                        class="h-full w-full object-cover transition-opacity duration-500 {imageLoaded ? 'opacity-100' : 'opacity-0'}"
                     />
                 {/if}
             </div>
@@ -227,7 +234,7 @@
                     {:else}
                         <button
                             onclick={addToCart}
-                            class="bg-ink text-sand px-6 py-3 rounded-full text-sm font-medium hover:bg-ink/85 transition-colors"
+                            class="press bg-ink text-sand px-6 py-3 rounded-full text-sm font-medium hover:bg-ink/85 transition-colors"
                         >
                             add to bag
                         </button>
@@ -237,7 +244,7 @@
                         href="https://instagram.com/retrosnack.shop"
                         target="_blank"
                         rel="noopener noreferrer"
-                        class="bg-accent text-sand px-6 py-3 rounded-full text-sm font-medium text-center hover:bg-accent-hover transition-colors"
+                        class="press bg-accent text-sand px-6 py-3 rounded-full text-sm font-medium text-center hover:bg-accent-hover transition-colors"
                     >
                         DM on instagram to purchase
                     </a>
@@ -247,13 +254,15 @@
     </article>
 
     {#if moreItems.length > 0}
-        <section class="mx-auto max-w-4xl px-4 pb-16">
-            <h2 class="text-lg font-semibold mb-4">you might also like</h2>
-            <ProductGrid>
-                {#each moreItems as item (item.id)}
-                    <ProductCard product={item} />
-                {/each}
-            </ProductGrid>
-        </section>
+        <FadeIn>
+            <section class="mx-auto max-w-4xl px-4 pb-16">
+                <h2 class="text-lg font-semibold mb-4">you might also like</h2>
+                <ProductGrid>
+                    {#each moreItems as item (item.id)}
+                        <ProductCard product={item} />
+                    {/each}
+                </ProductGrid>
+            </section>
+        </FadeIn>
     {/if}
 {/if}

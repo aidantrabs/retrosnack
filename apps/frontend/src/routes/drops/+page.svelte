@@ -2,6 +2,7 @@
     import { api } from '$lib/api';
     import type { Drop } from '$lib/api';
     import Skeleton from '$lib/components/Skeleton.svelte';
+    import FadeIn from '$lib/components/FadeIn.svelte';
 
     let drops = $state<Drop[]>([]);
     let loading = $state(true);
@@ -24,7 +25,10 @@
 </svelte:head>
 
 <section class="mx-auto max-w-6xl px-4 py-12">
-    <h1 class="text-2xl md:text-3xl font-semibold mb-8">drops</h1>
+    <div class="mb-8">
+        <h1 class="text-2xl md:text-3xl font-semibold">drops</h1>
+        <p class="text-ink-muted mt-2 text-sm">themed collections, released together.</p>
+    </div>
 
     {#if loading}
         <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -46,7 +50,7 @@
             {#each drops as drop (drop.id)}
                 <a
                     href="/drops/{drop.slug}"
-                    class="group block border border-border rounded-lg p-6 hover:border-ink transition-colors"
+                    class="group block border border-border rounded-lg p-6 hover:border-ink hover-lift"
                 >
                     <h2 class="text-lg font-semibold group-hover:text-accent transition-colors">
                         {drop.name}

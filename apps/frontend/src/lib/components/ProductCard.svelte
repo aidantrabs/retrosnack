@@ -13,7 +13,7 @@
     let imageLoaded = $state(!image);
 </script>
 
-<a href="/shop/{product.id}" class="group block {sold ? 'opacity-60' : ''}">
+<a href="/shop/{product.id}" class="group block hover-lift {sold ? 'opacity-60' : ''}">
     <div class="relative aspect-[3/4] overflow-hidden rounded-lg bg-sand-dark">
         {#if image}
             {#if !imageLoaded}

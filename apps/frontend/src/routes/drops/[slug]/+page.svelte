@@ -83,7 +83,7 @@
                         href={drop.instagram_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        class="bg-accent text-sand px-4 py-2 rounded-full text-sm font-medium hover:bg-accent-hover transition-colors"
+                        class="press bg-accent text-sand px-4 py-2 rounded-full text-sm font-medium hover:bg-accent-hover transition-colors"
                     >
                         view on instagram
                     </a>
@@ -92,7 +92,7 @@
                     href="https://instagram.com/retrosnack.shop"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="border border-border px-4 py-2 rounded-full text-sm font-medium hover:bg-sand-dark transition-colors"
+                    class="press border border-border px-4 py-2 rounded-full text-sm font-medium hover:bg-sand-dark transition-colors"
                 >
                     DM to purchase
                 </a>
