@@ -17,14 +17,14 @@ const (
 )
 
 type Order struct {
-	ID              uuid.UUID   `json:"id"`
-	UserID          *uuid.UUID  `json:"user_id,omitempty"`
-	Status          Status      `json:"status"`
-	TotalCents      int64       `json:"total_cents"`
+	ID                uuid.UUID   `json:"id"`
+	UserID            *uuid.UUID  `json:"user_id,omitempty"`
+	Status            Status      `json:"status"`
+	TotalCents        int64       `json:"total_cents"`
 	CheckoutSessionID *string     `json:"checkout_session_id,omitempty"`
-	Items           []OrderItem `json:"items"`
-	CreatedAt       time.Time   `json:"created_at"`
-	UpdatedAt       time.Time   `json:"updated_at"`
+	Items             []OrderItem `json:"items"`
+	CreatedAt         time.Time   `json:"created_at"`
+	UpdatedAt         time.Time   `json:"updated_at"`
 }
 
 type OrderItem struct {
