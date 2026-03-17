@@ -92,7 +92,6 @@
         </p>
     {:else}
         <div class="space-y-5 mb-8">
-            <!-- search -->
             <div class="relative">
                 <svg
                     class="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-muted"
@@ -103,6 +102,7 @@
                     stroke="currentColor"
                     stroke-width="1.5"
                     stroke-linecap="round"
+                    aria-hidden="true"
                 >
                     <circle cx="11" cy="11" r="8" />
                     <line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -110,6 +110,7 @@
                 <input
                     type="text"
                     placeholder="search by name or brand..."
+                    aria-label="search products"
                     bind:value={search}
                     class="w-full bg-sand-light border border-border rounded-full pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ink/20 focus:border-ink/30"
                     style="box-shadow: var(--shadow-soft); transition: box-shadow 0.15s"
@@ -117,7 +118,6 @@
             </div>
 
             <div class="flex flex-wrap items-center gap-3">
-                <!-- category filters -->
                 <div class="flex flex-wrap gap-2">
                     <button
                         onclick={() => (activeCategory = 'all')}
@@ -141,9 +141,9 @@
                     {/each}
                 </div>
 
-                <!-- sort -->
                 <select
                     bind:value={sort}
+                    aria-label="sort products"
                     class="ml-auto bg-sand-light border border-border rounded-full px-4 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ink/20 cursor-pointer"
                     style="box-shadow: var(--shadow-soft)"
                 >
