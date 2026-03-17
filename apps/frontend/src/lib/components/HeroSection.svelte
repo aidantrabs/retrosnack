@@ -41,6 +41,7 @@
                     stroke-width="1.5"
                     stroke-linecap="round"
                     stroke-linejoin="round"
+                    aria-hidden="true"
                 >
                     <path
                         d="M9.5 2a3.5 3.5 0 0 0-3 5.2A3.5 3.5 0 0 0 5.2 14a3.5 3.5 0 0 0 3 5.2 3.5 3.5 0 0 0 6.6 0 3.5 3.5 0 0 0 3-5.2A3.5 3.5 0 0 0 19.2 7 3.5 3.5 0 0 0 14.5 2a3.5 3.5 0 0 0-5 0"
@@ -59,6 +60,7 @@
                     stroke-width="1.5"
                     stroke-linecap="round"
                     stroke-linejoin="round"
+                    aria-hidden="true"
                 >
                     <path d="M12 22c-4-2-8-6-8-11a8 8 0 0 1 16 0c0 5-4 9-8 11z" />
                     <path d="M12 8v6" />
@@ -76,6 +78,7 @@
                     stroke-width="1.5"
                     stroke-linecap="round"
                     stroke-linejoin="round"
+                    aria-hidden="true"
                 >
                     <path d="M21 8l-2 12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L3 8" />
                     <path d="M1 8h22" />
