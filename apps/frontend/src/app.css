@@ -93,13 +93,6 @@
         box-shadow: var(--shadow-soft);
     }
 
-    .press {
-        @apply transition-transform duration-100;
-    }
-    .press:active {
-        @apply scale-[0.97];
-    }
-
     @keyframes badge-pop {
         0% {
             transform: scale(0);
