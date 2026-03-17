@@ -129,6 +129,7 @@
                             id="name"
                             type="text"
                             required
+                            autocomplete="name"
                             bind:value={name}
                             class="w-full bg-sand-light border border-border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ink/20"
                         />
@@ -140,6 +141,7 @@
                             id="email"
                             type="email"
                             required
+                            autocomplete="email"
                             bind:value={email}
                             class="w-full bg-sand-light border border-border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ink/20"
                         />
@@ -153,6 +155,7 @@
                             id="address"
                             type="text"
                             required
+                            autocomplete="street-address"
                             bind:value={address}
                             class="w-full bg-sand-light border border-border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ink/20"
                         />
@@ -165,6 +168,7 @@
                                 id="city"
                                 type="text"
                                 required
+                                autocomplete="address-level2"
                                 bind:value={city}
                                 class="w-full bg-sand-light border border-border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ink/20"
                             />
@@ -177,6 +181,7 @@
                                 id="province"
                                 type="text"
                                 required
+                                autocomplete="address-level1"
                                 bind:value={province}
                                 class="w-full bg-sand-light border border-border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ink/20"
                             />
@@ -189,6 +194,7 @@
                                 id="postal"
                                 type="text"
                                 required
+                                autocomplete="postal-code"
                                 bind:value={postal}
                                 class="w-full bg-sand-light border border-border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ink/20"
                             />
