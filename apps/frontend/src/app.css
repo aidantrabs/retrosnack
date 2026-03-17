@@ -1,5 +1,13 @@
 @import 'tailwindcss';
 
+@font-face {
+    font-family: 'Fredoka';
+    src: url('/fonts/fredoka-latin.woff2') format('woff2');
+    font-weight: 300 600;
+    font-style: normal;
+    font-display: block;
+}
+
 @theme {
     --color-sand: #e6d9cd;
     --color-sand-light: #f5ede6;
@@ -59,31 +67,30 @@
         box-shadow: var(--shadow-md);
     }
 
-    .btn {
-        @apply press rounded-full text-sm font-medium transition-all duration-150;
+    .btn-primary {
+        @apply rounded-full text-sm font-medium transition-all duration-150 bg-ink text-sand;
         box-shadow: var(--shadow-btn);
     }
-    .btn:hover {
+    .btn-primary:hover {
+        @apply bg-ink/90 -translate-y-px;
         box-shadow: var(--shadow-btn-hover);
-        @apply -translate-y-px;
     }
-    .btn:active {
+    .btn-primary:active {
         @apply translate-y-0 scale-[0.97];
         box-shadow: var(--shadow-soft);
     }
 
-    .btn-primary {
-        @apply btn bg-ink text-sand;
-    }
-    .btn-primary:hover {
-        @apply bg-ink/90;
-    }
-
     .btn-outline {
-        @apply btn border border-border bg-sand-light;
+        @apply rounded-full text-sm font-medium transition-all duration-150 border border-border bg-sand-light;
+        box-shadow: var(--shadow-btn);
     }
     .btn-outline:hover {
-        @apply bg-sand-dark/50 border-ink/20;
+        @apply bg-sand-dark/50 border-ink/20 -translate-y-px;
+        box-shadow: var(--shadow-btn-hover);
+    }
+    .btn-outline:active {
+        @apply translate-y-0 scale-[0.97];
+        box-shadow: var(--shadow-soft);
     }
 
     .press {
