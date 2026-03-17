@@ -158,7 +158,7 @@
                         />
                     </div>
 
-                    <div class="grid grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div>
                             <label for="city" class="block text-sm text-ink-muted mb-1">city</label>
                             <input
