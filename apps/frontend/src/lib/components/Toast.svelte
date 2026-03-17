@@ -3,7 +3,7 @@
 </script>
 
 {#if toast.visible}
-    <div role="status" aria-live="polite" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 animate-slide-down">
+    <div role="status" aria-live="polite" class="fixed top-16 left-1/2 -translate-x-1/2 z-[70] animate-slide-down">
         <div class="bg-ink text-sand px-5 py-2.5 rounded-full text-sm font-medium shadow-lg">
             {toast.message}
         </div>
