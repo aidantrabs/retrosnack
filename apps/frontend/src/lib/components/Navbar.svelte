@@ -27,7 +27,7 @@
             {#each links as link}
                 <a
                     href={link.href}
-                    class="relative text-sm transition-colors py-1 {page.url.pathname.startsWith(link.href)
+                    class="group relative text-sm transition-colors py-1 {page.url.pathname.startsWith(link.href)
                         ? 'text-ink font-medium'
                         : 'text-ink-muted hover:text-ink'}"
                 >
