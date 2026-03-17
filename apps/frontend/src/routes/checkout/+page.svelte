@@ -109,10 +109,7 @@
     {#if cart.items.length === 0}
         <div class="text-center py-16">
             <p class="text-ink-muted mb-6">your bag is empty.</p>
-            <a
-                href="/shop"
-                class="inline-block bg-ink text-sand px-6 py-3 rounded-full text-sm font-medium hover:bg-ink/85 transition-colors"
-            >
+            <a href="/shop" class="btn-primary inline-block px-6 py-3">
                 browse the rack
             </a>
         </div>

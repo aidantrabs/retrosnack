@@ -16,17 +16,14 @@
     </p>
 
     <div class="flex flex-col gap-3">
-        <a
-            href="/shop"
-            class="bg-ink text-sand px-6 py-3 rounded-full text-sm font-medium hover:bg-ink/85 transition-colors"
-        >
+        <a href="/shop" class="btn-primary px-6 py-3 text-center">
             keep browsing
         </a>
         <a
             href="https://instagram.com/retrosnack.shop"
             target="_blank"
             rel="noopener noreferrer"
-            class="border border-border px-6 py-3 rounded-full text-sm font-medium hover:bg-sand-dark transition-colors"
+            class="btn-outline px-6 py-3 text-center"
         >
             follow us on instagram
         </a>
